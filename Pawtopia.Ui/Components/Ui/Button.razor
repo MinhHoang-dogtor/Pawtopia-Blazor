@@ -1,0 +1,178 @@
+@using Pawtopia.Ui.Components.Variants
+<button
+    type="@Type"
+    class="@CssClass"
+    disabled="@Disabled"
+    @onclick="HandleClickAsync"
+    @onfocus="HandleFocusAsync"
+    @onblur="HandleBlurAsync"
+    @onmouseenter="HandleMouseEnterAsync"
+    @onmouseleave="HandleMouseLeaveAsync"
+    @attributes="NonClassAttributes">
+    @ChildContent
+</button>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string Type { get; set; } = "button";
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public bool FullWidth { get; set; }
+    [Parameter] public ButtonVariant Variant { get; set; } = ButtonVariant.Primary;
+    [Parameter] public EventCallback<MouseEventArgs> OnClick { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> OnMouseEnter { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> OnMouseLeave { get; set; }
+    [Parameter] public EventCallback<FocusEventArgs> OnFocus { get; set; }
+    [Parameter] public EventCallback<FocusEventArgs> OnBlur { get; set; }
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string CssClass => BuildCssClass();
+
+    private string BuildCssClass()
+    {
+        var classes = new List<string?>
+        {
+            "inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:pointer-events-none",
+            Variant switch
+            {
+                ButtonVariant.Secondary => "bg-white text-gray-900 border border-gray-200 shadow-sm hover:bg-gray-50 focus-visible:outline-gray-300",
+                ButtonVariant.Ghost => "bg-transparent text-gray-900 hover:bg-gray-100 focus-visible:outline-gray-200",
+                ButtonVariant.Destructive => "bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-500",
+                _ => "bg-indigo-600 text-white hover:bg-indigo-500 focus-visible:outline-indigo-500"
+            },
+            FullWidth ? "w-full" : null,
+            GetCustomClass()
+        };
+
+        return JoinNonEmpty(classes);
+    }
+
+    private static string JoinNonEmpty(IEnumerable<string?> values)
+    {
+        var builder = new System.Text.StringBuilder();
+        foreach (var value in values)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                continue;
+            }
+
+            if (builder.Length > 0)
+            {
+                builder.Append(' ');
+            }
+
+            builder.Append(value);
+        }
+
+        return builder.ToString();
+    }
+
+    private string? GetCustomClass()
+    {
+        if (AdditionalAttributes is null)
+        {
+            return null;
+        }
+
+        foreach (var attribute in AdditionalAttributes)
+        {
+            if (string.Equals(attribute.Key, "class", StringComparison.OrdinalIgnoreCase))
+            {
+                return attribute.Value?.ToString();
+            }
+        }
+
+        return null;
+    }
+
+    // Remove user supplied class attribute so tailwind styles are merged only once.
+    private IReadOnlyDictionary<string, object>? NonClassAttributes
+    {
+        get
+        {
+            if (AdditionalAttributes is null)
+            {
+                return null;
+            }
+
+            var containsClass = false;
+            foreach (var attribute in AdditionalAttributes)
+            {
+                if (string.Equals(attribute.Key, "class", StringComparison.OrdinalIgnoreCase))
+                {
+                    containsClass = true;
+                    break;
+                }
+            }
+
+            if (!containsClass)
+            {
+                return AdditionalAttributes;
+            }
+
+            var filtered = new Dictionary<string, object>(Math.Max(0, AdditionalAttributes.Count - 1), StringComparer.OrdinalIgnoreCase);
+            foreach (var attribute in AdditionalAttributes)
+            {
+                if (string.Equals(attribute.Key, "class", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                filtered[attribute.Key] = attribute.Value;
+            }
+
+            return filtered;
+        }
+    }
+
+    private Task HandleClickAsync(MouseEventArgs args)
+    {
+        if (Disabled || !OnClick.HasDelegate)
+        {
+            return Task.CompletedTask;
+        }
+
+        return OnClick.InvokeAsync(args);
+    }
+
+    private Task HandleFocusAsync(FocusEventArgs args)
+    {
+        if (!OnFocus.HasDelegate)
+        {
+            return Task.CompletedTask;
+        }
+
+        return OnFocus.InvokeAsync(args);
+    }
+
+    private Task HandleBlurAsync(FocusEventArgs args)
+    {
+        if (!OnBlur.HasDelegate)
+        {
+            return Task.CompletedTask;
+        }
+
+        return OnBlur.InvokeAsync(args);
+    }
+
+    private Task HandleMouseEnterAsync(MouseEventArgs args)
+    {
+        if (!OnMouseEnter.HasDelegate)
+        {
+            return Task.CompletedTask;
+        }
+
+        return OnMouseEnter.InvokeAsync(args);
+    }
+
+    private Task HandleMouseLeaveAsync(MouseEventArgs args)
+    {
+        if (!OnMouseLeave.HasDelegate)
+        {
+            return Task.CompletedTask;
+        }
+
+        return OnMouseLeave.InvokeAsync(args);
+    }
+}

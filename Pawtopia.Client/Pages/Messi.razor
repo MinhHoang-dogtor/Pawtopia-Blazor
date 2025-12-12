@@ -1,4 +1,5 @@
 ﻿@page "/messi"
+@using Pawtopia.Ui.Components.Variants
 @rendermode InteractiveAuto
 
 <PageTitle>Messi</PageTitle>
@@ -7,12 +8,23 @@
 
 <p role="status">Current count: @currentCount</p>
 
-<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+<Button Variant="ButtonVariant.Primary" OnClick="IncrementCount">
+    Click me
+</Button>
 
 <h1>We had...</h1>
 
-@for (int i = 0; i < currentCount; ++i) {
-    <img src="@Assets["assets/images/images.jpg"]" />
+@if (currentCount < 10)
+{
+    @for (int i = 0; i < currentCount; ++i)
+    {
+        <img src="@Assets["assets/images/images.jpg"]" />
+    }
+}
+else
+{
+    <img src="@Assets["assets/images/images.jpg"]"
+         class="w-dvw h-dvh object-cover block" />
 }
 
 @code {
