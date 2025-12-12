@@ -3,7 +3,7 @@
 @using Pawtopia.Data
 @using Pawtopia.Models
 
-@inject SignInManager<ApplicationUser> SignInManager
+@inject SignInManager<User> SignInManager
 @inject IdentityRedirectManager RedirectManager
 
 @if (externalLogins.Length == 0)

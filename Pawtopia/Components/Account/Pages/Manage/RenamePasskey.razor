@@ -6,7 +6,7 @@
 @using Pawtopia.Data
 @using Pawtopia.Models
 
-@inject UserManager<ApplicationUser> UserManager
+@inject UserManager<User> UserManager
 @inject IdentityRedirectManager RedirectManager
 
 <EditForm Model="Input" OnValidSubmit="Rename" FormName="rename-passkey" method="post">
@@ -32,7 +32,7 @@
 </EditForm>
 
 @code {
-    private ApplicationUser? user;
+    private User? user;
     private UserPasskeyInfo? passkey;
 
     [CascadingParameter]

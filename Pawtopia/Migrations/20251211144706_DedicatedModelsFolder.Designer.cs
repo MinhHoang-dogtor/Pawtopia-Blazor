@@ -10,7 +10,7 @@ using Pawtopia.Data;
 
 namespace Pawtopia.Migrations
 {
-    [DbContext(typeof(ApplicationDbContext))]
+    [DbContext(typeof(Data.PawtopiaDbContext))]
     [Migration("20251211144706_DedicatedModelsFolder")]
     partial class DedicatedModelsFolder
     {
@@ -169,7 +169,7 @@ namespace Pawtopia.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Pawtopia.Models.ApplicationUser", b =>
+            modelBuilder.Entity("Pawtopia.Models.User", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
@@ -245,7 +245,7 @@ namespace Pawtopia.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("Pawtopia.Models.ApplicationUser", null)
+                    b.HasOne("Pawtopia.Models.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -254,7 +254,7 @@ namespace Pawtopia.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("Pawtopia.Models.ApplicationUser", null)
+                    b.HasOne("Pawtopia.Models.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -263,7 +263,7 @@ namespace Pawtopia.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserPasskey<string>", b =>
                 {
-                    b.HasOne("Pawtopia.Models.ApplicationUser", null)
+                    b.HasOne("Pawtopia.Models.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -318,7 +318,7 @@ namespace Pawtopia.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Pawtopia.Models.ApplicationUser", null)
+                    b.HasOne("Pawtopia.Models.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -327,7 +327,7 @@ namespace Pawtopia.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("Pawtopia.Models.ApplicationUser", null)
+                    b.HasOne("Pawtopia.Models.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
