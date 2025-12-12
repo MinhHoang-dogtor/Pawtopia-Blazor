@@ -1,8 +1,7 @@
 export const content = [
   "./Pawtopia/**/*.razor",
-  "./Pawtopia/**/*.html",
   "./Pawtopia.Client/**/*.razor",
-  "./Pawtopia.Client/**/*.html"
+  "./Pawtopia.Ui/**/*.razor",
 ];
 export const theme = {
   extend: {},
