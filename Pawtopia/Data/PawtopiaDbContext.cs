@@ -9,7 +9,7 @@ namespace Pawtopia.Data
         : IdentityDbContext<
             User,
             IdentityRole,
-            string,
+            string, // PasswordHash
             IdentityUserClaim<string>,
             IdentityUserRole<string>,
             IdentityUserLogin<string>,
@@ -22,6 +22,10 @@ namespace Pawtopia.Data
         {
             base.OnModelCreating(builder);
 
+            // ---
+            // Customize the ASP.NET Identity models
+            // ---
+
             builder.Entity<User>().ToTable("Users");
             builder.Entity<IdentityRole>().ToTable("Roles");
             builder.Entity<IdentityUserClaim<string>>().ToTable("UserClaims");
@@ -32,6 +36,21 @@ namespace Pawtopia.Data
 
             // join table: user can have many roles, role can have many users
             builder.Entity<IdentityUserRole<string>>().ToTable("UserRoles");
+
+            // ---
+            // Additional application models
+            // ---
         }
+
+        public DbSet<Address> Addresses { get; set; } = null!;
+        public DbSet<Category> Categories { get; set; } = null!;
+        public DbSet<Product> Products { get; set; } = null!;
+        public DbSet<ProductItem> ProductItems { get; set; } = null!;
+        public DbSet<Order> Orders { get; set; } = null!;
+        public DbSet<OrderItem> OrderItems { get; set; } = null!;
+        public DbSet<ShoppingCart> ShoppingCarts { get; set; } = null!;
+        public DbSet<ShoppingCartItem> ShoppingCartItems { get; set; } = null!;
+        public DbSet<Variation> Variations { get; set; } = null!;
+        public DbSet<VariationOption> VariationOptions { get; set; } = null!;
     }
 }
