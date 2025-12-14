@@ -1,0 +1,328 @@
+﻿@page "/admin"
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager NavManager
+
+<style>
+    .toolbar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .table th, .table td {
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    .btn-sm {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+
+    .ms-3 {
+        margin-left: 1rem;
+    }
+
+    .badge-pill {
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+    }
+</style>
+
+<h3>Quản lý đơn hàng</h3>
+<p>Bảng quản trị — quản lý đơn hàng bên dưới.</p>
+
+<div class="toolbar">
+    <!-- Tìm kiếm -->
+    <input placeholder="Tìm theo khách hàng hoặc mã đơn"
+           class="form-control"
+           style="max-width: 240px;"
+           @bind="SearchTerm"
+           @bind:event="oninput" />
+
+    <!-- Lọc trạng thái đơn -->
+    <select class="form-select"
+            style="max-width: 160px;"
+            @bind="FilterStatus">
+        @foreach (var s in StatusCodes)
+        {
+            <option value="@s">@GetStatusLabel(s)</option>
+        }
+    </select>
+
+    <!-- Lọc trạng thái thanh toán -->
+    <select class="form-select"
+            style="max-width: 180px;"
+            @bind="FilterPaymentStatus">
+        @foreach (var s in PaymentStatusCodes)
+        {
+            <option value="@s">@GetPaymentStatusLabel(s)</option>
+        }
+    </select>
+
+    <!-- Lọc theo khoảng NGÀY TẠO (có nhãn Từ/Đến) -->
+    <label>Từ ngày:</label>
+    <input type="date"
+           class="form-control"
+           style="max-width: 160px;"
+           @bind="FilterFromDate"
+           @bind:format="yyyy-MM-dd" />
+
+    <label>Đến ngày:</label>
+    <input type="date"
+           class="form-control"
+           style="max-width: 160px;"
+           @bind="FilterToDate"
+           @bind:format="yyyy-MM-dd" />
+
+    <span class="ms-3">
+        Đơn hiển thị: <strong>@FilteredOrders.Count()</strong>/@orders.Count
+    </span>
+</div>
+
+@if (isLoading)
+{
+    <p>Đang tải đơn hàng...</p>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <p class="text-danger">@errorMessage</p>
+}
+else
+{
+    @if (FilteredOrders.Any())
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Mã</th>
+                    <th>Khách hàng</th> @* username *@
+                    <th>Tổng tiền</th>
+                    <th>TT thanh toán</th>
+                    <th>Trạng thái</th>
+                    <th>Ngày tạo</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var order in FilteredOrders)
+                {
+                    <tr>
+                        <td>@order.Id</td>
+                        <td>@(order.AccountName ?? order.CustomerName)</td>
+                        <td>@($"{order.Total:N0} VNĐ")</td>
+
+                        <td>
+                            <span class="badge badge-pill @GetPaymentStatusBadgeClass(order.PaymentStatus)">
+                                @GetPaymentStatusLabel(order.PaymentStatus)
+                            </span>
+                        </td>
+
+                        <td>@GetStatusLabel(order.Status)</td>
+                        <td>@order.CreatedAt.ToLocalTime().ToString("g")</td>
+                        <td>
+                            <a href="/admin/orders/@order.Id" class="btn btn-sm btn-info">
+                                Chi tiết
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="alert alert-warning">
+            Không có đơn hàng nào khớp với điều kiện lọc/tìm kiếm.
+        </div>
+    }
+}
+
+@code {
+    // --- DTOs ---
+    private sealed class OrderDto
+    {
+        public int Id { get; set; }
+
+        // Tài khoản đăng nhập (username)
+        public string? AccountName { get; set; }
+
+        // Họ tên người nhận (dùng cho chi tiết)
+        public string? CustomerName { get; set; }
+
+        public decimal Total { get; set; }
+        public string? Status { get; set; }
+        public DateTime CreatedAt { get; set; }
+
+        // Thanh toán
+        public string? PaymentMethod { get; set; }   // COD | BankTransfer | MoMo
+        public string? PaymentStatus { get; set; }   // Pending | Paid | Cancelled
+
+        public List<OrderStatusChangeDto> History { get; set; } = new();
+        public List<OrderItemDto> Items { get; set; } = new();
+    }
+
+    private sealed class OrderItemDto
+    {
+        public string? ProductName { get; set; }
+        public int Quantity { get; set; }
+        public decimal Price { get; set; }
+    }
+
+    private sealed class OrderStatusChangeDto
+    {
+        public string? FromStatus { get; set; }
+        public string? ToStatus { get; set; }
+        public DateTime ChangedAt { get; set; }
+        public string? ChangedBy { get; set; }
+        public string? Note { get; set; }
+    }
+    // -------------------------
+
+    private List<OrderDto> orders = new();
+
+    private bool isLoading;
+    private string? errorMessage;
+
+    // Search & filter (auto-properties)
+    private string SearchTerm { get; set; } = string.Empty;
+    private string FilterStatus { get; set; } = "All";
+    private string FilterPaymentStatus { get; set; } = "All";
+    private DateTime? FilterFromDate { get; set; }
+    private DateTime? FilterToDate { get; set; }
+
+    private readonly string[] StatusCodes =
+        new[] { "All", "Pending", "Processing", "Shipped", "Completed", "Cancelled" };
+
+    private readonly Dictionary<string, string> StatusLabels = new()
+    {
+        { "All", "Tất cả trạng thái" },
+        { "Pending", "Chờ xử lý" },
+        { "Processing", "Đang xử lý" },
+        { "Shipped", "Đã gửi" },
+        { "Completed", "Hoàn thành" },
+        { "Cancelled", "Đã hủy" }
+    };
+
+    private readonly string[] PaymentStatusCodes =
+        new[] { "All", "Pending", "Paid", "Cancelled" };
+
+    private readonly Dictionary<string, string> PaymentStatusLabels = new()
+    {
+        { "All", "Tất cả thanh toán" },
+        { "Pending", "Chờ xử lý" },
+        { "Paid", "Hoàn tất" },
+        { "Cancelled", "Đã hủy" }
+    };
+
+    private string GetStatusLabel(string? code)
+        => code is null ? string.Empty : StatusLabels.TryGetValue(code, out var lbl) ? lbl : code ?? string.Empty;
+
+    private string GetPaymentStatusLabel(string? code)
+        => code is null ? string.Empty : PaymentStatusLabels.TryGetValue(code, out var lbl) ? lbl : code ?? string.Empty;
+
+    private string GetPaymentStatusBadgeClass(string? code) => code switch
+    {
+        "Paid" => "bg-success text-white",
+        "Pending" => "bg-warning text-dark",
+        "Cancelled" => "bg-danger text-white",
+        _ => "bg-secondary text-white"
+    };
+
+    protected override void OnInitialized()
+    {
+        // Dùng demo data để test UI.
+        orders = GenerateSampleOrders();
+        isLoading = false;
+    }
+
+    // Lọc + SẮP XẾP THEO NGÀY TẠO (mới nhất trước)
+    private IEnumerable<OrderDto> FilteredOrders =>
+        orders
+            .Where(o =>
+                // Tìm kiếm: username, tên khách, mã đơn
+                (string.IsNullOrWhiteSpace(SearchTerm)
+                    || o.AccountName?.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) == true
+                    || o.CustomerName?.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) == true
+                    || o.Id.ToString().Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)))
+
+            // Lọc trạng thái đơn
+            .Where(o => FilterStatus == "All" || o.Status == FilterStatus)
+
+            // Lọc trạng thái thanh toán
+            .Where(o => FilterPaymentStatus == "All" || o.PaymentStatus == FilterPaymentStatus)
+
+            // Lọc theo KHOẢNG NGÀY TẠO
+            .Where(o => !FilterFromDate.HasValue || o.CreatedAt.Date >= FilterFromDate.Value.Date)
+            .Where(o => !FilterToDate.HasValue || o.CreatedAt.Date <= FilterToDate.Value.Date)
+
+            // Sắp xếp: ngày tạo mới nhất -> cũ nhất
+            .OrderByDescending(o => o.CreatedAt);
+
+    // DEMO DATA
+    private static List<OrderDto> GenerateSampleOrders()
+    {
+        return new List<OrderDto>
+        {
+            new OrderDto
+            {
+                Id = 1001,
+                AccountName = "nguyenvana",
+                CustomerName = "Nguyễn Văn A",
+                Total = 450000m,
+                Status = "Pending",
+                CreatedAt = DateTime.UtcNow.AddDays(-2),
+                PaymentMethod = "COD",
+                PaymentStatus = "Paid"
+            },
+            new OrderDto
+            {
+                Id = 1002,
+                AccountName = "tranthib",
+                CustomerName = "Trần Thị B",
+                Total = 200000m,
+                Status = "Processing",
+                CreatedAt = DateTime.UtcNow.AddDays(-1),
+                PaymentMethod = "MoMo",
+                PaymentStatus = "Paid"
+            },
+            new OrderDto
+            {
+                Id = 1003,
+                AccountName = "levanc",
+                CustomerName = "Lê Văn C",
+                Total = 800000m,
+                Status = "Shipped",
+                CreatedAt = DateTime.UtcNow.AddDays(-5),
+                PaymentMethod = "BankTransfer",
+                PaymentStatus = "Paid"
+            },
+            new OrderDto
+            {
+                Id = 1004,
+                AccountName = "phamthid",
+                CustomerName = "Phạm Thị D",
+                Total = 120000m,
+                Status = "Completed",
+                CreatedAt = DateTime.UtcNow.AddDays(-10),
+                PaymentMethod = "MoMo",
+                PaymentStatus = "Paid"
+            },
+            new OrderDto
+            {
+                Id = 1005,
+                AccountName = "hoangvane",
+                CustomerName = "Hoàng Văn E",
+                Total = 300000m,
+                Status = "Cancelled",
+                CreatedAt = DateTime.UtcNow.AddDays(-3),
+                PaymentMethod = "COD",
+                PaymentStatus = "Paid"
+            }
+        };
+    }
+}
