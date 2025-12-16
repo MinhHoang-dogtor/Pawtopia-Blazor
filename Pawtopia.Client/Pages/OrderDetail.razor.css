@@ -1,0 +1,148 @@
+﻿/* =========================================
+   Pawtopia – Order Detail (Blazor .NET)
+   ========================================= */
+
+/* Global palette */
+:global(:root) {
+    --pink-main: #ff7eb9;
+    --pink-light: #ffe3ef;
+    --pink-soft: #fff5fa;
+    --pink-dark: #ff5fa2;
+    --gray-text: #555;
+}
+
+/* ===== Title ===== */
+h3 {
+    color: var(--pink-dark);
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+/* ===== Back button ===== */
+::deep .btn-secondary {
+    background-color: #adb5bd !important;
+    border-radius: 999px !important;
+    font-weight: 500;
+}
+
+    ::deep .btn-secondary:hover {
+        background-color: #868e96 !important;
+    }
+
+/* ===== Cards ===== */
+::deep .card {
+    border-radius: 14px;
+    border: 1px solid var(--pink-light);
+    box-shadow: 0 4px 12px rgba(255, 126, 185, 0.08);
+}
+
+::deep .card-header {
+    font-weight: 600;
+    border-bottom: 1px solid var(--pink-light);
+}
+
+    /* Header variants */
+    ::deep .card-header.bg-primary {
+        background: linear-gradient(90deg, var(--pink-main), var(--pink-dark)) !important;
+        color: white !important;
+    }
+
+    ::deep .card-header.bg-secondary {
+        background: linear-gradient(90deg, #adb5bd, #868e96) !important;
+        color: white !important;
+    }
+
+    ::deep .card-header.bg-light {
+        background-color: var(--pink-soft) !important;
+        color: var(--pink-dark);
+    }
+
+/* ===== Text ===== */
+::deep .card-body p {
+    color: var(--gray-text);
+    margin-bottom: 8px;
+}
+
+/* ===== Form controls ===== */
+::deep .form-control,
+::deep .form-select {
+    border-radius: 999px !important;
+    border: 1px solid var(--pink-light) !important;
+}
+
+::deep textarea.form-control {
+    border-radius: 12px !important;
+}
+
+::deep .form-control:focus,
+::deep .form-select:focus {
+    border-color: var(--pink-main) !important;
+    box-shadow: 0 0 0 2px rgba(255, 126, 185, 0.25) !important;
+}
+
+/* ===== Action buttons ===== */
+::deep .btn-primary {
+    background-color: var(--pink-main) !important;
+    border: none !important;
+    border-radius: 999px !important;
+    font-weight: 500;
+}
+
+    ::deep .btn-primary:hover {
+        background-color: var(--pink-dark) !important;
+    }
+
+::deep .btn-success {
+    background-color: #4caf50 !important;
+    border: none !important;
+    border-radius: 999px !important;
+}
+
+    ::deep .btn-success:hover {
+        background-color: #43a047 !important;
+    }
+
+/* ===== Badges ===== */
+::deep .badge {
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-weight: 500;
+}
+
+/* ===== Product list ===== */
+::deep .list-group-item {
+    border: none;
+    border-bottom: 1px dashed var(--pink-light);
+    background-color: transparent;
+}
+
+    ::deep .list-group-item:last-child {
+        border-bottom: none;
+    }
+
+/* ===== History table ===== */
+::deep .table thead {
+    background-color: var(--pink-soft);
+    color: var(--pink-dark);
+}
+
+::deep .table th {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+::deep .table-striped tbody tr:nth-of-type(even) {
+    background-color: var(--pink-soft);
+}
+
+/* ===== Alerts ===== */
+::deep .alert-danger {
+    border-radius: 12px;
+}
+
+::deep .alert-warning {
+    background-color: var(--pink-light);
+    border: 1px dashed var(--pink-main);
+    color: var(--pink-dark);
+    border-radius: 12px;
+}
