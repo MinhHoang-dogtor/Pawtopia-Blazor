@@ -1,18 +1,21 @@
 ﻿@page "/admin"
+@using System.Net.Http.Json
 @inject HttpClient Http
 
-<h3>Quản lý Đơn Hàng</h3>
+<div class="header-card">
+    <h3>Quản lý Đơn Hàng</h3>
+    <p style="color: #666; margin-bottom: 1rem;">Bảng quản trị — quản lý đơn hàng bên dưới.</p>
+</div>
 
-<div class="toolbar">
+<div class="search-card mb-3">
     <input class="form-control"
-           placeholder="Tìm theo khách hàng / mã đơn"
-           style="max-width:240px"
+           placeholder="Tìm theo khách hàng / mã đơn..."
            @bind="SearchTerm"
            @bind:event="oninput" />
+</div>
 
-    <select class="form-select"
-            style="max-width:160px"
-            @bind="FilterStatus">
+<div class="toolbar d-flex gap-2 flex-wrap mb-3 align-items-center">
+    <select class="form-select" style="max-width:160px" @bind="FilterStatus">
         <option value="">Tất cả trạng thái</option>
         @foreach (var s in StatusOptions)
         {
@@ -20,101 +23,117 @@
         }
     </select>
 
-    <select class="form-select"
-            style="max-width:180px"
-            @bind="FilterPaymentStatus">
+    <select class="form-select" style="max-width:180px" @bind="FilterPaymentStatus">
         <option value="">Tất cả thanh toán</option>
         @foreach (var s in PaymentStatusOptions)
         {
             <option value="@s">@GetPaymentStatusLabel(s)</option>
         }
     </select>
+
+    <div class="d-flex align-items-center gap-2">
+        <label>Từ:</label>
+        <input type="date" class="form-control" style="max-width:150px"
+               value="@FromDate"
+               @onchange="@(e => { FromDate = e.Value?.ToString() ?? ""; OnDateChanged(); })" />
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
+        <label>Đến:</label>
+        <input type="date" class="form-control" style="max-width:150px"
+               value="@ToDate"
+               @onchange="@(e => { ToDate = e.Value?.ToString() ?? ""; OnDateChanged(); })" />
+    </div>
+
+    <div class="ms-auto fw-bold">
+        Hiển thị: @FilteredOrders.Count() / @orders.Count đơn
+    </div>
 </div>
 
 @if (isLoading)
 {
-    <p>Đang tải đơn hàng…</p>
+    <div class="alert alert-info">⏳ Đang tải dữ liệu đơn hàng...</div>
 }
 else if (!string.IsNullOrEmpty(error))
 {
-    <div class="alert alert-danger">@error</div>
+    <div class="alert alert-danger">⚠️ @error</div>
 }
 else if (!FilteredOrders.Any())
 {
-    <div class="alert alert-warning">Không có đơn hàng</div>
+    <div class="alert alert-warning">📭 Không tìm thấy đơn hàng nào.</div>
 }
 else
 {
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Mã</th>
-                <th>Khách hàng</th>
-                <th>Tổng tiền</th>
-                <th>Thanh toán</th>
-                <th>Trạng thái</th>
-                <th>Ngày tạo</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var o in FilteredOrders)
-            {
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered align-middle">
+            <thead class="table-light">
                 <tr>
-                    <td>@o.Id</td>
-                    <td>@(o.AccountName ?? o.CustomerName)</td>
-                    <td>@($"{o.Total:N0} VNĐ")</td>
-                    <td>
-                        <span class="badge @GetPaymentBadge(o.PaymentStatus)">
-                            @GetPaymentStatusLabel(o.PaymentStatus)
-                        </span>
-                    </td>
-                    <td>@GetStatusLabel(o.Status)</td>
-                    <td>@o.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
-                    <td>
-                        <a class="btn btn-sm paw-btn"
-                           href="/admin/orders/@o.Id">
-                            Chi tiết
-                        </a>
-                    </td>
+                    <th>Mã Đơn</th>
+                    <th>Khách hàng</th>
+                    <th>Tổng tiền</th>
+                    <th>Thanh toán</th>
+                    <th>Trạng thái</th>
+                    <th>Ngày tạo</th>
+                    <th>Thao tác</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var o in FilteredOrders)
+                {
+                    <tr>
+                        <td><small>#@o.Id</small></td>
+                        <td>
+                            <div class="fw-bold">@(o.AccountName ?? "Khách vãng lai")</div>
+                            <small class="text-muted">@(o.CustomerName ?? "No Email")</small>
+                        </td>
+                        <td class="text-success fw-bold">
+                            @o.Total.ToString("N0") đ
+                        </td>
+                        <td>
+                            <span class="badge @GetPaymentBadge(o.PaymentStatus)">
+                                @GetPaymentStatusLabel(o.PaymentStatus)
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">
+                                @GetStatusLabel(o.Status)
+                            </span>
+                        </td>
+                        <td>@o.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>
+                            <a class="btn btn-primary btn-sm" href="/admin/orders/@o.Id">
+                                Chi tiết
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }
 
 @code {
-    // =======================
     // STATE
-    // =======================
     private List<OrderDto> orders = new();
     private bool isLoading = true;
     private string? error;
 
+    // FILTER STATE
     private string SearchTerm = "";
     private string FilterStatus = "";
     private string FilterPaymentStatus = "";
+    private string FromDate = "";
+    private string ToDate = "";
 
-    // =======================
     // OPTIONS
-    // =======================
-    private static readonly string[] StatusOptions =
-        { "Pending", "Processing", "Shipped", "Completed", "Cancelled" };
+    private static readonly string[] StatusOptions = { "Pending", "Processing", "Shipped", "Completed", "Cancelled" };
+    private static readonly string[] PaymentStatusOptions = { "Pending", "Paid", "Cancelled" };
 
-    private static readonly string[] PaymentStatusOptions =
-        { "Pending", "Paid", "Cancelled" };
-
-    // =======================
-    // LIFECYCLE
-    // =======================
     protected override async Task OnInitializedAsync()
     {
         await LoadOrdersAsync();
     }
 
-    // =======================
-    // DATA
-    // =======================
     private async Task LoadOrdersAsync()
     {
         try
@@ -122,13 +141,19 @@ else
             isLoading = true;
             error = null;
 
-            orders = await Http.GetFromJsonAsync<List<OrderDto>>(
-                "api/admin/orders"
-            ) ?? new();
+            var url = "api/admin/orders";
+            var queryParams = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(FromDate)) queryParams.Add($"fromDate={Uri.EscapeDataString(FromDate)}");
+            if (!string.IsNullOrWhiteSpace(ToDate)) queryParams.Add($"toDate={Uri.EscapeDataString(ToDate)}");
+
+            if (queryParams.Any()) url += "?" + string.Join("&", queryParams);
+
+            orders = await Http.GetFromJsonAsync<List<OrderDto>>(url) ?? new();
         }
         catch (Exception ex)
         {
-            error = $"Không thể tải đơn hàng: {ex.Message}";
+            error = $"Lỗi kết nối: {ex.Message}";
         }
         finally
         {
@@ -136,56 +161,59 @@ else
         }
     }
 
-    private IEnumerable<OrderDto> FilteredOrders =>
-        orders.Where(o =>
-            (string.IsNullOrWhiteSpace(SearchTerm)
-                || o.AccountName?.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) == true
-                || o.CustomerName?.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) == true
-                || o.Id.ToString().Contains(SearchTerm))
-            && (string.IsNullOrEmpty(FilterStatus) || o.Status == FilterStatus)
-            && (string.IsNullOrEmpty(FilterPaymentStatus) || o.PaymentStatus == FilterPaymentStatus)
-        );
+    private async Task OnDateChanged()
+    {
+        await LoadOrdersAsync();
+    }
 
-    // =======================
-    // LABELS
-    // =======================
+    // LOGIC LỌC TẠI CLIENT
+    private IEnumerable<OrderDto> FilteredOrders => orders.Where(o =>
+        (string.IsNullOrWhiteSpace(SearchTerm) ||
+         (o.AccountName?.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+         (o.CustomerName?.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+         o.Id.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase))
+        &&
+        (string.IsNullOrEmpty(FilterStatus) || o.Status == FilterStatus)
+        &&
+        (string.IsNullOrEmpty(FilterPaymentStatus) || o.PaymentStatus == FilterPaymentStatus)
+    );
+
+    // HELPER LABELS
     private static string GetStatusLabel(string? s) => s switch
     {
-        "Pending" => "Chờ xử lý",
+        "Pending" => "Chờ xác nhận",
         "Processing" => "Đang xử lý",
-        "Shipped" => "Đã gửi",
+        "Shipped" => "Đang giao",
         "Completed" => "Hoàn thành",
         "Cancelled" => "Đã hủy",
-        _ => "-"
+        _ => s ?? "-"
     };
 
     private static string GetPaymentStatusLabel(string? s) => s switch
     {
-        "Paid" => "Hoàn tất",
-        "Pending" => "Chờ xử lý",
+        "Paid" => "Đã thanh toán",
+        "Pending" => "Chưa thanh toán",
         "Cancelled" => "Đã hủy",
-        _ => "-"
+        _ => s ?? "-"
     };
 
     private static string GetPaymentBadge(string? s) => s switch
     {
-        "Paid" => "bg-success text-white",
+        "Paid" => "bg-success",
         "Pending" => "bg-warning text-dark",
-        "Cancelled" => "bg-danger text-white",
-        _ => "bg-secondary text-white"
+        "Cancelled" => "bg-danger",
+        _ => "bg-secondary"
     };
 
-    // =======================
-    // DTO
-    // =======================
-    private sealed class OrderDto
+    // DTO CLASS (Phải khớp với Controller)
+    public class OrderDto
     {
-        public int Id { get; set; }
+        public string Id { get; set; } = "";
         public string? AccountName { get; set; }
         public string? CustomerName { get; set; }
         public decimal Total { get; set; }
-        public string? Status { get; set; }
-        public string? PaymentStatus { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string? Status { get; set; }        // Controller đã trả về String
+        public string? PaymentStatus { get; set; }
     }
 }

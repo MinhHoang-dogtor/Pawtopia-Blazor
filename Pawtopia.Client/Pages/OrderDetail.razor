@@ -1,402 +1,215 @@
-﻿@page "/admin/orders/{OrderId:int}"
+﻿@page "/admin/orders/{OrderId}"
 @using System.Net.Http.Json
 @inject HttpClient Http
 @inject NavigationManager NavManager
 
-<h3>Chi tiết Đơn hàng #@OrderId</h3>
-
-<div class="mb-3">
-    <a href="/admin" class="btn btn-secondary">Quay lại Quản lý Đơn hàng</a>
-</div>
-
-@if (isLoading)
-{
-    <p><em>Đang tải chi tiết đơn hàng...</em></p>
-}
-else if (!string.IsNullOrEmpty(errorMessage))
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
-else if (orderDetails is not null)
-{
-    <div class="row">
-
-        <div class="col-md-6">
-            <!-- THÔNG TIN ĐƠN HÀNG + TRẠNG THÁI -->
-            <div class="card mb-3">
-                <div class="card-header bg-primary text-white">Thông tin Đơn hàng</div>
-                <div class="card-body">
-                    <p><strong>Mã đơn:</strong> @orderDetails.Id</p>
-                    <p><strong>Khách hàng:</strong> @orderDetails.AccountName</p>
-                    @* Người nhận đã được chuyển xuống khối Thông tin Giao hàng *@
-                    <p><strong>Ngày đặt:</strong> @orderDetails.CreatedAt.ToLocalTime().ToString("g")</p>
-                    <p><strong>Tổng tiền:</strong> @($"{orderDetails.Total:N0} VNĐ")</p>
-
-                    <p><strong>Phương thức thanh toán:</strong> @GetPaymentMethodLabel(orderDetails.PaymentMethod)</p>
-                    <p>
-                        <strong>Trạng thái thanh toán:</strong>
-                        <span class="badge @GetPaymentStatusBadgeClass(orderDetails.PaymentStatus)">
-                            @GetPaymentStatusLabel(orderDetails.PaymentStatus)
-                        </span>
-                    </p>
-
-                    <p>
-                        <strong>Trạng thái đơn:</strong>
-                        <select class="form-select d-inline-block"
-                                style="max-width: 200px; display: inline-block;"
-                                @bind="selectedStatus">
-                            @foreach (var s in StatusLabels.Keys)
-                            {
-                                <option value="@s">@GetStatusLabel(s)</option>
-                            }
-                        </select>
-
-                        <button class="btn btn-sm btn-primary ms-2"
-                                @onclick="UpdateStatusAsync"
-                                disabled="@isSavingStatus">
-                            @(isSavingStatus ? "Đang lưu..." : "Lưu trạng thái")
-                        </button>
-                    </p>
-                </div>
-            </div>
-
-            <!-- THÔNG TIN GIAO HÀNG & GHI CHÚ -->
-            <div class="card mb-3">
-                <div class="card-header bg-light">Thông tin Giao hàng</div>
-                <div class="card-body">
-                    <div class="mb-2">
-                        <label class="form-label"><strong>Người nhận</strong></label>
-                        <input class="form-control"
-                               @bind="orderDetails.CustomerName" />
-                    </div>
-
-                    <div class="mb-2">
-                        <label class="form-label"><strong>Địa chỉ</strong></label>
-                        <textarea class="form-control"
-                                  rows="2"
-                                  @bind="orderDetails.ShippingAddress"></textarea>
-                    </div>
-
-                    <div class="mb-2">
-                        <label class="form-label"><strong>Số điện thoại</strong></label>
-                        <input class="form-control"
-                               @bind="orderDetails.ShippingPhone" />
-                    </div>
-
-                    <div class="mb-2">
-                        <label class="form-label"><strong>Email:</strong></label>
-                        <input class="form-control"
-                               type="email"
-                               @bind="orderDetails.ShippingEmail" />
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label"><strong>Ghi chú:</strong></label>
-                        <textarea class="form-control"
-                                  rows="2"
-                                  @bind="orderDetails.Note"></textarea>
-                    </div>
-
-                    <button class="btn btn-success"
-                            @onclick="SaveOrderInfoAsync"
-                            disabled="@isSavingOrderInfo">
-                        @(isSavingOrderInfo ? "Đang lưu..." : "Lưu thông tin đơn hàng")
-                    </button>
-                </div>
-            </div>
-
-            <!-- SẢN PHẨM -->
-            <div class="card mb-3">
-                <div class="card-header">Sản phẩm đã đặt (@orderDetails.Items.Count)</div>
-                <ul class="list-group list-group-flush">
-                    @if (orderDetails.Items.Any())
-                    {
-                        @foreach (var item in orderDetails.Items)
-                        {
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>@item.Quantity x @item.ProductName</span>
-                                <span>@($"{item.Price * item.Quantity:N0} VNĐ")</span>
-                            </li>
-                        }
-                    }
-                    else
-                    {
-                        <li class="list-group-item">Đơn hàng không có sản phẩm nào.</li>
-                    }
-                </ul>
-            </div>
-        </div>
-
-        <!-- LỊCH SỬ TRẠNG THÁI -->
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header bg-secondary text-white">
-                    Lịch sử Thay đổi Trạng thái (@orderHistory.Count)
-                </div>
-                @if (orderHistory.Any())
-                {
-                    <table class="table table-sm table-striped">
-                        <thead>
-                            <tr>
-                                <th>Thời gian</th>
-                                <th>Trạng thái cũ</th>
-                                <th>Trạng thái mới</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var h in orderHistory.OrderByDescending(h => h.ChangedAt))
-                            {
-                                <tr>
-                                    <td>@h.ChangedAt.ToLocalTime().ToString("g")</td>
-                                    <td>@GetStatusLabel(h.FromStatus)</td>
-                                    <td>@GetStatusLabel(h.ToStatus)</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                }
-                else
-                {
-                    <p class="p-3">Chưa có lịch sử trạng thái nào được ghi nhận.</p>
-                }
-            </div>
-        </div>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>Chi tiết Đơn hàng #@OrderId</h3>
+        <a href="/admin" class="btn btn-secondary">⬅ Quay lại danh sách</a>
     </div>
-}
-else
-{
-    <div class="alert alert-warning">Không thể tìm thấy chi tiết đơn hàng này.</div>
-}
+
+    @if (isLoading)
+    {
+        <div class="alert alert-info">⏳ Đang tải dữ liệu từ server...</div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">❌ @errorMessage</div>
+    }
+    else if (orderDetails is not null)
+    {
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="m-0">Sản phẩm đã đặt (@orderDetails.Items.Count)</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Sản phẩm</th>
+                                    <th class="text-center">SL</th>
+                                    <th class="text-end">Đơn giá</th>
+                                    <th class="text-end">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in orderDetails.Items)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                @if (!string.IsNullOrEmpty(item.Image))
+                                                {
+                                                    <img src="@item.Image" class="rounded me-2" style="width: 40px; height: 40px; object-fit: cover;" onerror="this.src='/images/no-image.png'" />
+                                                }
+                                                <span class="fw-medium">@item.ProductName</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">@item.Quantity</td>
+                                        <td class="text-end">@item.Price.ToString("N0") đ</td>
+                                        <td class="text-end fw-bold">@item.Total.ToString("N0") đ</td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot class="bg-light">
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold">Tổng cộng:</td>
+                                    <td class="text-end fw-bold text-danger fs-5">
+                                        @orderDetails.TotalAmount.ToString("N0") đ
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card mb-3 shadow-sm">
+                    <div class="card-header bg-light fw-bold">Thông tin Giao hàng & Khách hàng</div>
+                    <div class="card-body">
+                        <div class="row mb-2">
+                            <div class="col-md-6">
+                                <label class="text-muted small">Tên khách hàng</label>
+                                <p class="fw-bold">@orderDetails.CustomerName</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small">Số điện thoại</label>
+                                <p>@(string.IsNullOrEmpty(orderDetails.CustomerPhone) ? "---" : orderDetails.CustomerPhone)</p>
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-6">
+                                <label class="text-muted small">Email</label>
+                                <p>@(string.IsNullOrEmpty(orderDetails.CustomerEmail) ? "---" : orderDetails.CustomerEmail)</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small">Ngày đặt hàng</label>
+                                <p>@orderDetails.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</p>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="text-muted small">Địa chỉ giao hàng</label>
+                            <p class="border p-2 rounded bg-light">@orderDetails.ShippingAddress</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-primary text-white">
+                        Trạng thái Đơn hàng
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Trạng thái hiện tại:</label>
+                            <select class="form-select mb-2" @bind="selectedStatus">
+                                @foreach (var s in StatusLabels)
+                                {
+                                    <option value="@s.Key">@s.Value</option>
+                                }
+                            </select>
+                            <button class="btn btn-primary w-100" @onclick="UpdateStatusAsync" disabled>
+                                💾 Cập nhật trạng thái (Chưa mở API)
+                            </button>
+                        </div>
+
+                        <hr />
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Thanh toán:</label>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>@GetPaymentStatusLabel(orderDetails.PaymentStatus)</span>
+                                <span class="badge @(orderDetails.IsPaid ? "bg-success" : "bg-warning text-dark")">
+                                    @(orderDetails.IsPaid ? "Đã thanh toán" : "Chưa thanh toán")
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning">⚠️ Không tìm thấy đơn hàng.</div>
+    }
+</div>
 
 @code {
     [Parameter]
-    public int OrderId { get; set; }
+    public string OrderId { get; set; } = string.Empty;
 
-    // --- DTOs (giống với trang /admin, bổ sung account + shipping + note) ---
-    private sealed class OrderDto
+    // --- DTO: Phải khớp 100% với JSON trả về từ AdminOrdersController ---
+    public class OrderDetailDto
     {
-        public int Id { get; set; }
-
-        // Tài khoản đăng nhập
-        public string? AccountName { get; set; }
-
-        // Họ tên người nhận
-        public string? CustomerName { get; set; }
-
-        public decimal Total { get; set; }
-        public string? Status { get; set; }
+        public string Id { get; set; } = "";
         public DateTime CreatedAt { get; set; }
+        public string Status { get; set; } = "";
+        public string PaymentStatus { get; set; } = "";
+        public bool IsPaid { get; set; }
 
-        public string? PaymentMethod { get; set; }   // COD | BankTransfer | MoMo
-        public string? PaymentStatus { get; set; }   // Pending | Paid | Cancelled
+        public string CustomerName { get; set; } = "";
+        public string CustomerEmail { get; set; } = "";
+        public string CustomerPhone { get; set; } = "";
 
-        // Thông tin giao hàng
-        public string? ShippingAddress { get; set; }
-        public string? ShippingPhone { get; set; }
-        public string? ShippingEmail { get; set; }
+        public string ShippingAddress { get; set; } = "";
 
-        // Ghi chú đơn hàng
-        public string? Note { get; set; }
-
-        public List<OrderStatusChangeDto> History { get; set; } = new();
+        public decimal TotalAmount { get; set; }
         public List<OrderItemDto> Items { get; set; } = new();
     }
 
-    private sealed class OrderItemDto
+    public class OrderItemDto
     {
-        public string? ProductName { get; set; }
-        public int Quantity { get; set; }
+        public string ProductName { get; set; } = "";
         public decimal Price { get; set; }
-    }
-
-    private sealed class OrderStatusChangeDto
-    {
-        public string? FromStatus { get; set; }
-        public string? ToStatus { get; set; }
-        public DateTime ChangedAt { get; set; }
-        public string? ChangedBy { get; set; }
-        public string? Note { get; set; }
+        public int Quantity { get; set; }
+        public decimal Total { get; set; }
+        public string? Image { get; set; } // Link ảnh (ThumbImageLink)
     }
     // -----------------------------------------------------------------
 
-    private OrderDto? orderDetails;
-    private List<OrderStatusChangeDto> orderHistory = new();
+    private OrderDetailDto? orderDetails;
     private bool isLoading = true;
     private string? errorMessage;
-
-    // state cho việc cập nhật
     private string? selectedStatus;
-    private bool isSavingStatus;
-    private bool isSavingOrderInfo;
 
-    // Mapping trạng thái
+    // Mapping hiển thị tiếng Việt
     private readonly Dictionary<string, string> StatusLabels = new()
     {
-        { "Pending", "Chờ xử lý" },
+        { "Pending", "Chờ xác nhận" },
         { "Processing", "Đang xử lý" },
-        { "Shipped", "Đã gửi" },
+        { "Shipping", "Đang giao hàng" },
         { "Completed", "Hoàn thành" },
         { "Cancelled", "Đã hủy" }
     };
 
-    private readonly Dictionary<string, string> PaymentMethodLabels = new()
-    {
-        { "COD", "COD (Nhận hàng trả tiền)" },
-        { "BankTransfer", "Chuyển khoản ngân hàng" },
-        { "MoMo", "Ví MoMo" }
-    };
-
-    private readonly Dictionary<string, string> PaymentStatusLabels = new()
-    {
-        { "Pending", "Chờ xử lý" },
-        { "Paid", "Hoàn tất" },
-        { "Cancelled", "Đã hủy" }
-    };
-
-    private string GetStatusLabel(string? code)
-        => code is null ? string.Empty : StatusLabels.TryGetValue(code, out var lbl) ? lbl : code ?? string.Empty;
-
-    private string GetPaymentMethodLabel(string? code)
-        => code is null ? string.Empty : PaymentMethodLabels.TryGetValue(code, out var lbl) ? lbl : code ?? string.Empty;
-
-    private string GetPaymentStatusLabel(string? code)
-        => code is null ? string.Empty : PaymentStatusLabels.TryGetValue(code, out var lbl) ? lbl : code ?? string.Empty;
-
-    private string GetPaymentStatusBadgeClass(string? code) => code switch
-    {
-        "Paid" => "bg-success text-white",
-        "Pending" => "bg-warning text-dark",
-        "Cancelled" => "bg-danger text-white",
-        _ => "bg-secondary text-white"
-    };
-
     protected override async Task OnInitializedAsync()
     {
-        await LoadOrderDetailsAndHistoryAsync();
-        selectedStatus = orderDetails?.Status;
+        await LoadOrderDetailsAsync();
     }
 
-    // Cập nhật trạng thái đơn & lưu lịch sử
-    private async Task UpdateStatusAsync()
-    {
-        if (orderDetails is null || string.IsNullOrEmpty(selectedStatus) || selectedStatus == orderDetails.Status)
-            return;
-
-        var oldStatus = orderDetails.Status;
-        var newStatus = selectedStatus;
-
-        var historyEntry = new OrderStatusChangeDto
-        {
-            FromStatus = oldStatus,
-            ToStatus = newStatus,
-            ChangedAt = DateTime.UtcNow,
-            ChangedBy = "Admin",
-            Note = "Cập nhật trạng thái từ màn hình chi tiết đơn hàng."
-        };
-
-        try
-        {
-            isSavingStatus = true;
-            errorMessage = null;
-
-            if (OrderId < 2000)
-            {
-                // DEMO: chỉ cập nhật trong bộ nhớ
-                orderDetails.Status = newStatus;
-                orderHistory.Add(historyEntry);
-            }
-            else
-            {
-                // THỰC TẾ: gọi API backend
-                var resp = await Http.PutAsJsonAsync($"api/orders/{OrderId}/status", new { status = newStatus });
-                resp.EnsureSuccessStatusCode();
-
-                // Nếu backend có endpoint lưu lịch sử, gọi thêm:
-                // await Http.PostAsJsonAsync($"api/orders/{OrderId}/history", historyEntry);
-
-                orderDetails.Status = newStatus;
-                orderHistory.Add(historyEntry);
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Lỗi khi cập nhật trạng thái: {ex.Message}";
-        }
-        finally
-        {
-            isSavingStatus = false;
-        }
-    }
-
-    // Lưu thông tin giao hàng + ghi chú
-    private async Task SaveOrderInfoAsync()
-    {
-        if (orderDetails is null)
-            return;
-
-        try
-        {
-            isSavingOrderInfo = true;
-            errorMessage = null;
-
-            if (OrderId < 2000)
-            {
-                // DEMO: không cần làm gì thêm, dữ liệu đã ở trong bộ nhớ
-            }
-            else
-            {
-                // THỰC TẾ: cập nhật đơn hàng
-                var resp = await Http.PutAsJsonAsync($"api/orders/{OrderId}", orderDetails);
-                resp.EnsureSuccessStatusCode();
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Lỗi khi lưu thông tin đơn hàng: {ex.Message}";
-        }
-        finally
-        {
-            isSavingOrderInfo = false;
-        }
-    }
-
-    private async Task LoadOrderDetailsAndHistoryAsync()
+    private async Task LoadOrderDetailsAsync()
     {
         isLoading = true;
         errorMessage = null;
 
         try
         {
-            if (OrderId < 2000)
+            // GỌI API THỰC TẾ
+            var url = $"api/admin/orders/{OrderId}";
+            orderDetails = await Http.GetFromJsonAsync<OrderDetailDto>(url);
+
+            if (orderDetails != null)
             {
-                // DEMO: lấy từ dữ liệu mẫu
-                var demoOrders = GenerateSampleOrders();
-                orderDetails = demoOrders.FirstOrDefault(o => o.Id == OrderId);
-                orderHistory = orderDetails?.History ?? new List<OrderStatusChangeDto>();
-
-                if (orderDetails == null)
-                {
-                    errorMessage = $"Không tìm thấy đơn hàng DEMO ID: {OrderId}";
-                }
-            }
-            else
-            {
-                // THỰC TẾ: gọi API
-                orderDetails = await Http.GetFromJsonAsync<OrderDto>($"api/orders/{OrderId}");
-
-                if (orderDetails == null)
-                {
-                    errorMessage = "Không tìm thấy đơn hàng.";
-                    return;
-                }
-
-                orderHistory = await Http.GetFromJsonAsync<List<OrderStatusChangeDto>>($"api/orders/{OrderId}/history")
-                               ?? new List<OrderStatusChangeDto>();
+                selectedStatus = orderDetails.Status;
             }
         }
         catch (Exception ex)
         {
-            errorMessage = $"Lỗi khi tải dữ liệu: {ex.Message}";
+            errorMessage = $"Lỗi tải dữ liệu: {ex.Message}";
         }
         finally
         {
@@ -404,98 +217,21 @@ else
         }
     }
 
-    // DEMO data (giống /admin, có AccountName + shipping + note mẫu)
-    private static List<OrderDto> GenerateSampleOrders()
+    // Helper hiển thị
+    private string GetPaymentStatusLabel(string? code) => code switch
     {
-        return new List<OrderDto>
-        {
-            new OrderDto
-            {
-                Id = 1001,
-                AccountName = "nguyenvana",
-                CustomerName = "Nguyễn Văn A",
-                Total = 450000m,
-                Status = "Pending",
-                CreatedAt = DateTime.UtcNow.AddDays(-2),
-                PaymentMethod = "COD",
-                PaymentStatus = "Paid",
-                ShippingAddress = "123 Lê Lợi, Q.1, TP.HCM",
-                ShippingPhone = "0900000001",
-                ShippingEmail = "vana@example.com",
-                Note = "Giao giờ hành chính",
-                Items = new List<OrderItemDto>
-                {
-                    new OrderItemDto { ProductName = "Thức ăn chó 1kg", Quantity = 1, Price = 150000m },
-                    new OrderItemDto { ProductName = "Xương gặm", Quantity = 2, Price = 150000m }
-                },
-                History = new List<OrderStatusChangeDto>()
-            },
-            new OrderDto
-            {
-                Id = 1002,
-                AccountName = "tranthib",
-                CustomerName = "Trần Thị B",
-                Total = 200000m,
-                Status = "Processing",
-                CreatedAt = DateTime.UtcNow.AddDays(-1),
-                PaymentMethod = "MoMo",
-                PaymentStatus = "Paid",
-                ShippingAddress = "456 Hai Bà Trưng, Q.3, TP.HCM",
-                ShippingPhone = "0900000002",
-                ShippingEmail = "thib@example.com",
-                Items = new List<OrderItemDto>
-                {
-                    new OrderItemDto { ProductName = "Vòng cổ", Quantity = 1, Price = 200000m }
-                },
-                History = new List<OrderStatusChangeDto>()
-            },
-            new OrderDto
-            {
-                Id = 1003,
-                AccountName = "levanc",
-                CustomerName = "Lê Văn C",
-                Total = 800000m,
-                Status = "Shipped",
-                CreatedAt = DateTime.UtcNow.AddDays(-5),
-                PaymentMethod = "BankTransfer",
-                PaymentStatus = "Paid",
-                ShippingAddress = "789 Nguyễn Huệ, Q.1, TP.HCM",
-                ShippingPhone = "0900000003",
-                Items = new List<OrderItemDto>
-                {
-                    new OrderItemDto { ProductName = "Cát vệ sinh 5kg", Quantity = 4, Price = 200000m }
-                },
-                History = new List<OrderStatusChangeDto>()
-            },
-            new OrderDto
-            {
-                Id = 1004,
-                AccountName = "phamthid",
-                CustomerName = "Phạm Thị D",
-                Total = 120000m,
-                Status = "Completed",
-                CreatedAt = DateTime.UtcNow.AddDays(-10),
-                PaymentMethod = "MoMo",
-                PaymentStatus = "Paid",
-                ShippingAddress = "12 Trần Hưng Đạo, TP.Đà Nẵng",
-                ShippingPhone = "0900000004",
-                History = new List<OrderStatusChangeDto>()
-            },
-            new OrderDto
-            {
-                Id = 1005,
-                AccountName = "hoangvane",
-                CustomerName = "Hoàng Văn E",
-                Total = 300000m,
-                Status = "Cancelled",
-                CreatedAt = DateTime.UtcNow.AddDays(-3),
-                PaymentMethod = "COD",
-                PaymentStatus = "Paid",
-                ShippingAddress = "99 Pasteur, Q.3, TP.HCM",
-                ShippingPhone = "0900000005",
-                Note = "Khách đã hủy đơn qua điện thoại",
-                History = new List<OrderStatusChangeDto>()
-            }
-        };
+        "Paid" => "Đã thanh toán",
+        "Pending" => "Chờ thanh toán",
+        "Cancelled" => "Đã hủy",
+        _ => code ?? "---"
+    };
+
+    // Hàm cập nhật (Hiện tại Disable vì chưa có API PUT)
+    private async Task UpdateStatusAsync()
+    {
+        // TODO: Mở comment khi đã viết API PUT cập nhật trạng thái
+        // var response = await Http.PutAsJsonAsync($"api/admin/orders/{OrderId}/status", selectedStatus);
+        // if (response.IsSuccessStatusCode) { ... }
+        await Task.CompletedTask;
     }
 }
