@@ -16,13 +16,11 @@ namespace Pawtopia.Controllers
             _context = context;
         }
 
-        // 1. Lấy danh sách (Trang Admin)
+        // 1. API Lấy danh sách đơn hàng
         [HttpGet]
         public async Task<IActionResult> GetOrders(string? fromDate, string? toDate)
         {
-            var query = _context.Orders
-                .Include(o => o.User)
-                .AsQueryable();
+            var query = _context.Orders.Include(o => o.User).AsQueryable();
 
             if (!string.IsNullOrEmpty(fromDate) && DateTime.TryParse(fromDate, out var fDate))
                 query = query.Where(o => o.CreatedAt >= fDate);
@@ -32,12 +30,10 @@ namespace Pawtopia.Controllers
 
             var result = await query
                 .OrderByDescending(o => o.CreatedAt)
-                .Select(o => new
-                {
+                .Select(o => new {
                     Id = o.Id,
                     AccountName = o.User != null ? o.User.DisplayName : "Khách ẩn danh",
-                    CustomerName = o.User != null ? o.User.UserName : "No Email",
-                    Total = o.OrderItems.Sum(oi => oi.Quantity * oi.ProductItem.Price),
+                    Total = o.OrderItems.Sum(oi => (decimal)(oi.ProductItem != null ? oi.ProductItem.Price : 0) * oi.Quantity),
                     CreatedAt = o.CreatedAt,
                     Status = o.Status.ToString(),
                     PaymentStatus = o.PaymentStatus
@@ -47,58 +43,54 @@ namespace Pawtopia.Controllers
             return Ok(result);
         }
 
-        // 2. Lấy chi tiết (Trang OrderDetail)
+        // 2. API Lấy chi tiết đơn hàng
         [HttpGet("{id}")]
         public async Task<IActionResult> GetOrderDetails(string id)
         {
             var order = await _context.Orders
                 .Include(o => o.User)
                 .Include(o => o.Address)
-                .Include(o => o.OrderItems)
-                    .ThenInclude(oi => oi.ProductItem) // Lấy ProductItem
-                        .ThenInclude(pi => pi.Product) // Lấy tiếp Product để có Tên
+                .Include(o => o.OrderItems).ThenInclude(oi => oi.ProductItem).ThenInclude(pi => pi.Product)
                 .FirstOrDefaultAsync(o => o.Id == id);
 
             if (order == null) return NotFound("Không tìm thấy đơn hàng");
 
-            // Xử lý địa chỉ
-            string fullAddress = "Chưa có địa chỉ";
-            if (order.Address != null)
-            {
-                // Ghép địa chỉ từ Address.cs
-                fullAddress = $"{order.Address.AddressLine}, {order.Address.Ward}, {order.Address.Province}";
-            }
-
-            var result = new
+            return Ok(new
             {
                 Id = order.Id,
                 CreatedAt = order.CreatedAt,
                 Status = order.Status.ToString(),
                 PaymentStatus = order.PaymentStatus,
                 IsPaid = order.IsPaid,
-                CustomerName = order.User != null ? order.User.DisplayName : "Khách vãng lai",
-                CustomerEmail = order.User != null ? order.User.Email : "",
-                CustomerPhone = order.User != null ? order.User.PhoneNumber : "",
-                ShippingAddress = fullAddress,
-
-                Items = order.OrderItems.Select(oi => new
-                {
-                    // Lấy tên từ Product cha
-                    ProductName = oi.ProductItem.Product != null ? oi.ProductItem.Product.Name : "Sản phẩm (Lỗi tên)",
-
-                    Price = oi.ProductItem.Price,
+                CustomerName = order.Address != null ? order.Address.FullName : (order.User?.DisplayName ?? "Khách hàng"),
+                CustomerPhone = order.Address != null ? order.Address.PhoneNumber : (order.User?.PhoneNumber ?? "Chưa có SĐT"),
+                ShippingAddress = order.Address != null ? $"{order.Address.AddressLine}, {order.Address.Ward}, {order.Address.Province}" : "Chưa có địa chỉ",
+                Items = order.OrderItems.Select(oi => new {
+                    ProductName = oi.ProductItem?.Product?.Name ?? "Sản phẩm",
+                    Price = oi.ProductItem?.Price ?? 0,
                     Quantity = oi.Quantity,
-                    Total = oi.ProductItem.Price * oi.Quantity,
-
-                    // --- SỬA LỖI TẠI ĐÂY ---
-                    // Đổi ImageUrl thành ThumbImageLink (khớp với ProductItem.cs)
-                    Image = oi.ProductItem.ThumbImageLink
+                    Total = (decimal)(oi.ProductItem?.Price ?? 0) * oi.Quantity,
+                    Image = oi.ProductItem?.ThumbImageLink
                 }).ToList(),
+                TotalAmount = order.OrderItems.Sum(oi => (decimal)(oi.ProductItem?.Price ?? 0) * oi.Quantity)
+            });
+        }
 
-                TotalAmount = order.OrderItems.Sum(oi => oi.Quantity * oi.ProductItem.Price)
-            };
+        // 3. API LƯU TRẠNG THÁI (CHỈ GIỮ LẠI DUY NHẤT 1 HÀM NÀY)
+        [HttpPut("{id}/status")]
+        public async Task<IActionResult> UpdateOrderStatus(string id, [FromBody] string newStatus)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound();
 
-            return Ok(result);
+            if (Enum.TryParse<OrderStatus>(newStatus, out var statusEnum))
+            {
+                order.Status = statusEnum;
+                await _context.SaveChangesAsync(); // Lưu thực tế vào Database
+                return Ok();
+            }
+
+            return BadRequest("Trạng thái không hợp lệ");
         }
     }
 }
