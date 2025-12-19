@@ -1,5 +1,4 @@
 ﻿@page "/Account/Manage/RenamePasskey/{Id}"
-
 @using System.Buffers.Text
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Identity
@@ -9,30 +8,41 @@
 @inject UserManager<User> UserManager
 @inject IdentityRedirectManager RedirectManager
 
-<EditForm Model="Input" OnValidSubmit="Rename" FormName="rename-passkey" method="post">
-    <DataAnnotationsValidator />
-    @if (passkey?.Name is { } name)
-    {
-        <h4>Enter a new name for your "@name" passkey</h4>
-    }
-    else
-    {
-        <h4>Enter a name for your passkey</h4>
-    }
-    <hr />
-    <ValidationSummary class="text-danger" role="alert" />
-    <div class="form-floating mb-3">
-        <InputText @bind-Value="Input.Name" id="Input.Name" class="form-control" aria-required="true" placeholder="My passkey" />
-        <label for="Input.Name" class="form-label">Passkey name</label>
-        <ValidationMessage For="() => Input.Name" class="text-danger" />
+<div class="bg-white shadow sm:rounded-lg">
+    <div class="px-4 py-5 sm:p-6">
+        <EditForm Model="Input" OnValidSubmit="Rename" FormName="rename-passkey" method="post" class="max-w-md space-y-6">
+            <DataAnnotationsValidator />
+            
+            <div>
+                 @if (passkey?.Name is { } name)
+                {
+                    <h3 class="text-base font-semibold leading-6 text-gray-900">Đổi tên Passkey "@name"</h3>
+                }
+                else
+                {
+                    <h3 class="text-base font-semibold leading-6 text-gray-900">Đặt tên cho Passkey</h3>
+                }
+                <div class="mt-2 text-sm text-gray-500">Nhập tên mới dễ nhớ cho khóa bảo mật này.</div>
+            </div>
+
+            <div>
+                <label for="Input.Name" class="block text-sm font-medium leading-6 text-gray-900">Tên Passkey</label>
+                <div class="mt-2">
+                    <InputText @bind-Value="Input.Name" id="Input.Name" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" aria-required="true" placeholder="Ví dụ: iPhone của tôi" />
+                </div>
+                <ValidationMessage For="() => Input.Name" class="mt-1 text-sm text-red-600" />
+            </div>
+
+            <button type="submit" class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 transition-colors">
+                Lưu thay đổi
+            </button>
+        </EditForm>
     </div>
-    <div>
-        <button type="submit" class="w-100 btn btn-lg btn-primary">Continue</button>
-    </div>
-</EditForm>
+</div>
 
 @code {
-    private User? user;
+    // ... (Code C# giữ nguyên) ...
+     private User? user;
     private UserPasskeyInfo? passkey;
 
     [CascadingParameter]
@@ -47,7 +57,6 @@
     protected override async Task OnInitializedAsync()
     {
         Input ??= new();
-
         user = (await UserManager.GetUserAsync(HttpContext.User))!;
         if (user is null)
         {

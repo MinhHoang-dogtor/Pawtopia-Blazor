@@ -1,7 +1,13 @@
 ﻿@using Microsoft.AspNetCore.Antiforgery
 @inject IServiceProvider Services
 
-<button type="submit" name="__passkeySubmit" @attributes="AdditionalAttributes">@ChildContent</button>
+<button type="submit" 
+        name="__passkeySubmit" 
+        class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 w-full sm:w-auto"
+        @attributes="AdditionalAttributes">
+    @ChildContent
+</button>
+
 <passkey-submit
     operation="@Operation"
     name="@Name"
@@ -12,26 +18,12 @@
 
 @code {
     private AntiforgeryTokenSet? tokens;
-
-    [CascadingParameter]
-    private HttpContext HttpContext { get; set; } = default!;
-
-    [Parameter]
-    [EditorRequired]
-    public PasskeyOperation Operation { get; set; }
-
-    [Parameter]
-    [EditorRequired]
-    public string Name { get; set; } = default!;
-
-    [Parameter]
-    public string? EmailName { get; set; }
-
-    [Parameter]
-    public RenderFragment? ChildContent { get; set; }
-
-    [Parameter(CaptureUnmatchedValues = true)]
-    public IDictionary<string, object>? AdditionalAttributes { get; set; }
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+    [Parameter] [EditorRequired] public PasskeyOperation Operation { get; set; }
+    [Parameter] [EditorRequired] public string Name { get; set; } = default!;
+    [Parameter] public string? EmailName { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter(CaptureUnmatchedValues = true)] public IDictionary<string, object>? AdditionalAttributes { get; set; }
 
     protected override void OnInitialized()
     {

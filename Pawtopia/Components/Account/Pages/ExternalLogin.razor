@@ -17,30 +17,62 @@
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<ExternalLogin> Logger
 
-<PageTitle>Register</PageTitle>
+<PageTitle>Hoàn tất đăng ký - Pawtopia</PageTitle>
 
-<StatusMessage Message="@message" />
-<h1>Register</h1>
-<h2>Associate your @ProviderDisplayName account.</h2>
-<hr />
-
-<div  class="alert alert-info">
-    You've successfully authenticated with <strong>@ProviderDisplayName</strong>.
-    Please enter an email address for this site below and click the Register button to finish
-    logging in.
-</div>
-
-<div class="row">
-    <div class="col-md-4">
-        <EditForm Model="Input" OnValidSubmit="OnValidSubmitAsync" FormName="confirmation" method="post">
-            <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert" />
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="email" placeholder="Please enter your email." />
-                <label for="Input.Email" class="form-label">Email</label>
-                <ValidationMessage For="() => Input.Email" />
+<div class="flex min-h-[80vh] items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8 font-sans">
+    <div class="w-full max-w-md space-y-8 bg-white p-10 rounded-2xl shadow-xl border border-gray-100">
+        
+        <div class="text-center">
+            <div class="mx-auto h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                @if (ProviderDisplayName == "Google")
+                {
+                    <svg class="h-8 w-8" viewBox="0 0 24 24">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                    </svg>
+                }
+                else
+                {
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8 text-blue-600">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                    </svg>
+                }
             </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
+            <h2 class="text-2xl font-bold text-gray-900 tracking-tight">Xác nhận thông tin</h2>
+            <p class="mt-2 text-sm text-gray-500">
+                Bạn đã đăng nhập thành công qua <strong>@ProviderDisplayName</strong>. 
+                Vui lòng xác nhận email để hoàn tất.
+            </p>
+        </div>
+
+        <StatusMessage Message="@message" />
+
+        <EditForm Model="Input" OnValidSubmit="OnValidSubmitAsync" FormName="confirmation" method="post" class="mt-8 space-y-6">
+            <DataAnnotationsValidator />
+            
+            <div class="space-y-1">
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Địa chỉ Email xác nhận</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                        </svg>
+                    </div>
+                    @* Thêm thuộc tính readonly và đổi màu nền để khóa ô nhập *@
+                    <InputText @bind-Value="Input.Email" id="email" readonly
+                        class="block w-full rounded-lg border-gray-200 bg-gray-100 pl-10 px-4 py-3 text-gray-500 cursor-not-allowed sm:text-sm shadow-sm outline-none border" 
+                        placeholder="name@example.com" autocomplete="email" />
+                </div>
+                <p class="mt-2 text-xs text-gray-400 italic">* Email này được cung cấp bởi @ProviderDisplayName và không thể thay đổi.</p>
+                <ValidationMessage For="() => Input.Email" class="mt-1 text-xs text-red-500" />
+            </div>
+
+            <button type="submit" 
+                class="flex w-full justify-center rounded-full bg-[#c26d48] px-4 py-3 text-sm font-bold text-white shadow-md hover:bg-[#a65d3d] focus:outline-none focus:ring-2 focus:ring-[#c26d48] focus:ring-offset-2 transition-all transform hover:-translate-y-0.5">
+                Xác nhận & Hoàn tất đăng ký
+            </button>
         </EditForm>
     </div>
 </div>
@@ -95,8 +127,6 @@
                 return;
             }
 
-            // We should only reach this page via the login callback, so redirect back to
-            // the login page if we get here some other way.
             RedirectManager.RedirectTo("Account/Login");
         }
     }
@@ -109,7 +139,6 @@
             return;
         }
 
-        // Sign in the user with this external login provider if the user already has a login.
         var result = await SignInManager.ExternalLoginSignInAsync(
             externalLoginInfo.LoginProvider,
             externalLoginInfo.ProviderKey,
@@ -131,7 +160,6 @@
             return;
         }
 
-        // If the user does not have an account, then ask the user to create an account.
         if (externalLoginInfo.Principal.HasClaim(c => c.Type == ClaimTypes.Email))
         {
             Input.Email = externalLoginInfo.Principal.FindFirstValue(ClaimTypes.Email) ?? "";
@@ -169,7 +197,6 @@
                     new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code });
                 await EmailSender.SendConfirmationLinkAsync(user, Input.Email, HtmlEncoder.Default.Encode(callbackUrl));
 
-                // If account confirmation is required, we need to show the link if we don't have a real email sender
                 if (UserManager.Options.SignIn.RequireConfirmedAccount)
                 {
                     RedirectManager.RedirectTo("Account/RegisterConfirmation", new() { ["email"] = Input.Email });
@@ -183,7 +210,7 @@
         }
         else
         {
-            message = $"Error: {string.Join(",", result.Errors.Select(error => error.Description))}";
+            message = $"Lỗi: {string.Join(", ", result.Errors.Select(error => error.Description))}";
         }
     }
 
@@ -211,8 +238,8 @@
 
     private sealed class InputModel
     {
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessage = "Vui lòng nhập Email")]
+        [EmailAddress(ErrorMessage = "Email không hợp lệ")]
         public string Email { get; set; } = "";
     }
 }

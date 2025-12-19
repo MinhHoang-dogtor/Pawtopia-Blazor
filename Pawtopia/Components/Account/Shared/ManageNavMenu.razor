@@ -4,36 +4,42 @@
 
 @inject SignInManager<User> SignInManager
 
-<ul class="nav nav-pills flex-column">
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage" Match="NavLinkMatch.All">Profile</NavLink>
-    </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/Email">Email</NavLink>
-    </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/ChangePassword">Password</NavLink>
-    </li>
+<nav class="space-y-1">
+    <NavLink class="manage-nav-link group flex items-center px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:text-indigo-700 hover:bg-gray-50 transition-colors" href="Account/Manage" Match="NavLinkMatch.All">
+        <span class="truncate">Hồ sơ (Profile)</span>
+    </NavLink>
+    <NavLink class="manage-nav-link group flex items-center px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:text-indigo-700 hover:bg-gray-50 transition-colors" href="Account/Manage/Address">
+        <span class="truncate">Địa chỉ</span>
+    </NavLink>
+    <NavLink class="manage-nav-link group flex items-center px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:text-indigo-700 hover:bg-gray-50 transition-colors" href="Account/Manage/Email">
+        <span class="truncate">Email</span>
+    </NavLink>
+    <NavLink class="manage-nav-link group flex items-center px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:text-indigo-700 hover:bg-gray-50 transition-colors" href="Account/Manage/ChangePassword">
+        <span class="truncate">Mật khẩu</span>
+    </NavLink>
+    
     @if (hasExternalLogins)
     {
-        <li class="nav-item">
-            <NavLink class="nav-link" href="Account/Manage/ExternalLogins">External logins</NavLink>
-        </li>
+        <NavLink class="manage-nav-link group flex items-center px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:text-indigo-700 hover:bg-gray-50 transition-colors" href="Account/Manage/ExternalLogins">
+            <span class="truncate">Liên kết ngoài</span>
+        </NavLink>
     }
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/TwoFactorAuthentication">Two-factor authentication</NavLink>
-    </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/Passkeys">Passkeys</NavLink>
-    </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/PersonalData">Personal data</NavLink>
-    </li>
-</ul>
+
+    <NavLink class="manage-nav-link group flex items-center px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:text-indigo-700 hover:bg-gray-50 transition-colors" href="Account/Manage/TwoFactorAuthentication">
+        <span class="truncate">Xác thực 2 yếu tố (2FA)</span>
+    </NavLink>
+
+    <NavLink class="manage-nav-link group flex items-center px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:text-indigo-700 hover:bg-gray-50 transition-colors" href="Account/Manage/Passkeys">
+        <span class="truncate">Passkeys</span>
+    </NavLink>
+
+    <NavLink class="manage-nav-link group flex items-center px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:text-indigo-700 hover:bg-gray-50 transition-colors" href="Account/Manage/PersonalData">
+        <span class="truncate">Dữ liệu cá nhân</span>
+    </NavLink>
+</nav>
 
 @code {
     private bool hasExternalLogins;
-
     protected override async Task OnInitializedAsync()
     {
         hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();

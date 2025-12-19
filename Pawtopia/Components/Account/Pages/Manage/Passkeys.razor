@@ -1,5 +1,4 @@
 ﻿@page "/Account/Manage/Passkeys"
-
 @using System.Buffers.Text
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Identity
@@ -10,59 +9,80 @@
 @inject SignInManager<User> SignInManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Manage your passkeys</PageTitle>
+<PageTitle>Quản lý Passkeys</PageTitle>
 
-<h3>Manage your passkeys</h3>
+<div class="space-y-6">
+    <div>
+        <h3 class="text-lg font-medium leading-6 text-gray-900">Quản lý Passkeys</h3>
+        <p class="mt-1 text-sm text-gray-500">Đăng nhập không cần mật khẩu bằng vân tay hoặc FaceID.</p>
+    </div>
 
-<StatusMessage />
+    <StatusMessage />
 
-@if (currentPasskeys is { Count: > 0 })
-{
-    <table class="table">
-        <tbody>
-            @foreach (var passkey in currentPasskeys)
-            {
-                <tr>
-                    <td>@(passkey.Name ?? "Unnamed passkey")</td>
-                    <td>
-                        @{
-                            var credentialId = Base64Url.EncodeToString(passkey.CredentialId);
+    <div class="bg-white shadow sm:rounded-lg overflow-hidden">
+        @if (currentPasskeys is { Count: > 0 })
+        {
+            <div class="min-w-full divide-y divide-gray-300">
+                <table class="min-w-full divide-y divide-gray-300">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Tên Passkey</th>
+                            <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                                <span class="sr-only">Hành động</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 bg-white">
+                        @foreach (var passkey in currentPasskeys)
+                        {
+                            <tr>
+                                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                                    @(passkey.Name ?? "Chưa đặt tên")
+                                </td>
+                                <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                                    @{ var credentialId = Base64Url.EncodeToString(passkey.CredentialId); }
+                                    <form @formname="@($"update-passkey-{credentialId}")" @onsubmit="UpdatePasskey" method="post" class="inline-flex space-x-2">
+                                        <AntiforgeryToken />
+                                        <input type="hidden" name="CredentialId" value="@credentialId" />
+                                        <button type="submit" name="Action" value="rename" class="text-indigo-600 hover:text-indigo-900">Đổi tên</button>
+                                        <span class="text-gray-300">|</span>
+                                        <button type="submit" name="Action" value="delete" class="text-red-600 hover:text-red-900">Xóa</button>
+                                    </form>
+                                </td>
+                            </tr>
                         }
-                        <form @formname="@($"update-passkey-{credentialId}")" @onsubmit="UpdatePasskey" method="post">
-                            <AntiforgeryToken />
-                            <div>
-                                <input type="hidden" name="CredentialId" value="@credentialId" />
-                                <button type="submit" name="Action" value="rename" class="btn btn-primary" title="Rename this passkey">Rename</button>
-                                <button type="submit" name="Action" value="delete" class="btn btn-danger" title="Remove this passkey from your account">Delete</button>
-                            </div>
-                        </form>
-                    </td>
-                </tr>
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-10">
+                <p class="text-sm text-gray-500">Chưa có Passkey nào được đăng ký.</p>
+            </div>
+        }
+    </div>
+
+    <div class="pt-4">
+        <form @formname="add-passkey" @onsubmit="AddPasskey" method="post">
+            <AntiforgeryToken />
+            @if (currentPasskeys is { Count: >= MaxPasskeyCount })
+            {
+                <p class="text-sm text-red-600">Bạn đã đạt giới hạn số lượng Passkey. Vui lòng xóa bớt để thêm mới.</p>
             }
-        </tbody>
-    </table>
-}
-else
-{
-    <p>No passkeys are registered.</p>
-}
-
-<form @formname="add-passkey" @onsubmit="AddPasskey" method="post">
-    <AntiforgeryToken />
-    @if (currentPasskeys is { Count: >= MaxPasskeyCount })
-    {
-        <p class="text-danger">You have reached the maximum number of allowed passkeys. Please delete one before adding a new one.</p>
-    }
-    else
-    {
-        <PasskeySubmit Operation="PasskeyOperation.Create" Name="Input" class="btn btn-primary">Add a new passkey</PasskeySubmit>
-    }
-
-</form>
+            else
+            {
+                <PasskeySubmit Operation="PasskeyOperation.Create" Name="Input">
+                    Thêm Passkey mới
+                </PasskeySubmit>
+            }
+        </form>
+    </div>
+</div>
 
 @code {
-    private const int MaxPasskeyCount = 100;
-
+    // ... (Code C# giữ nguyên) ...
+     private const int MaxPasskeyCount = 100;
     private User? user;
     private IList<UserPasskeyInfo>? currentPasskeys;
 
@@ -81,7 +101,6 @@ else
     protected override async Task OnInitializedAsync()
     {
         Input ??= new();
-
         user = await UserManager.GetUserAsync(HttpContext.User);
         if (user is null)
         {

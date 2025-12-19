@@ -2,7 +2,6 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Pawtopia.Data;
 
@@ -11,11 +10,9 @@ using Pawtopia.Data;
 namespace Pawtopia.Migrations
 {
     [DbContext(typeof(PawtopiaDbContext))]
-    [Migration("20251212085945_SeedRoles")]
-    partial class SeedRoles
+    partial class PawtopiaDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.1");
@@ -197,6 +194,9 @@ namespace Pawtopia.Migrations
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("PhoneNumber")
                         .IsRequired()
@@ -414,6 +414,9 @@ namespace Pawtopia.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("TEXT");
 
+                    b.Property<DateOnly?>("DateOfBirth")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("DisplayName")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -424,6 +427,12 @@ namespace Pawtopia.Migrations
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("FullName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Gender")
+                        .HasColumnType("TEXT");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("INTEGER");
@@ -612,7 +621,7 @@ namespace Pawtopia.Migrations
             modelBuilder.Entity("Pawtopia.Models.Address", b =>
                 {
                     b.HasOne("Pawtopia.Models.User", "User")
-                        .WithMany()
+                        .WithMany("Addresses")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -728,6 +737,11 @@ namespace Pawtopia.Migrations
                         .IsRequired();
 
                     b.Navigation("Variation");
+                });
+
+            modelBuilder.Entity("Pawtopia.Models.User", b =>
+                {
+                    b.Navigation("Addresses");
                 });
 #pragma warning restore 612, 618
         }

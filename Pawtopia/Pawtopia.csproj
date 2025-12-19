@@ -1,21 +1,26 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-	<PropertyGroup>
-		<TargetFramework>net10.0</TargetFramework>
-		<Nullable>enable</Nullable>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<UserSecretsId>aspnet-Pawtopia-9e143f5e-044a-4b2b-80d4-20bb63e490ca</UserSecretsId>
-		<BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
-	</PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>aspnet-Pawtopia-9e143f5e-044a-4b2b-80d4-20bb63e490ca</UserSecretsId>
+        <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    </PropertyGroup>
 
-	<ItemGroup>
-		<ProjectReference Include="..\Pawtopia.Client\Pawtopia.Client.csproj" />
-		<ProjectReference Include="..\Pawtopia.Ui\Pawtopia.Ui.csproj" />
-		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.1" />
-		<PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.1" />
-		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.1" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.1" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.1" />
-	</ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.1" />
+        <ProjectReference Include="..\Pawtopia.Client\Pawtopia.Client.csproj" />
+        <ProjectReference Include="..\Pawtopia.Ui\Pawtopia.Ui.csproj" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.1" />
+        <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.1" />
+        <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.1" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.1" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.1" />
+    </ItemGroup>
+
+    <Target Name="BuildTailwind" BeforeTargets="Build">
+        <Exec Command="cmd /c npx tailwindcss -i ./Styles/app.css -o ./wwwroot/styles/tailwind.generated.css" />
+    </Target>
 
 </Project>

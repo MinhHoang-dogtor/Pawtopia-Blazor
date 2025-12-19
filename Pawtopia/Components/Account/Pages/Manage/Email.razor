@@ -13,48 +13,71 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Manage email</PageTitle>
+<PageTitle>Quản lý Email</PageTitle>
 
-<h3>Manage email</h3>
+<div class="space-y-6">
+    <div>
+        <h3 class="text-lg font-medium leading-6 text-gray-900">Quản lý Email</h3>
+        <p class="mt-1 text-sm text-gray-500">Thay đổi hoặc xác thực địa chỉ email của bạn.</p>
+    </div>
 
-<StatusMessage Message="@message"/>
-<div class="row">
-    <div class="col-xl-6">
-        <form @onsubmit="OnSendEmailVerificationAsync" @formname="send-verification" id="send-verification-form" method="post">
-            <AntiforgeryToken />
-        </form>
-        <EditForm Model="Input" FormName="change-email" OnValidSubmit="OnValidSubmitAsync" method="post">
-            <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert" />
-            @if (isEmailConfirmed)
-            {
-                <div class="form-floating mb-3 input-group">
-                    <input type="text" value="@email" id="email" class="form-control" placeholder="Enter your email" disabled />
-                    <div class="input-group-append">
-                        <span class="h-100 input-group-text text-success font-weight-bold">✓</span>
+    <StatusMessage Message="@message" />
+
+    <div class="bg-white shadow sm:rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <div class="max-w-xl">
+                <form @onsubmit="OnSendEmailVerificationAsync" @formname="send-verification" id="send-verification-form" method="post">
+                    <AntiforgeryToken />
+                </form>
+
+                <EditForm Model="Input" FormName="change-email" OnValidSubmit="OnValidSubmitAsync" method="post" class="space-y-6">
+                    <DataAnnotationsValidator />
+                    <div>
+                        <label for="email" class="block text-sm font-medium leading-6 text-gray-900">Email hiện tại</label>
+                        @if (isEmailConfirmed)
+                        {
+                            <div class="relative mt-2 rounded-md shadow-sm">
+                                <input type="text" value="@email" id="email" class="block w-full rounded-md border-0 py-1.5 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 disabled:bg-gray-50 disabled:text-gray-500 disabled:ring-gray-200" placeholder="Please wait..." disabled />
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                                    <svg class="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                             <div class="mt-2">
+                                <input type="text" value="@email" id="email" class="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 disabled:bg-gray-50 disabled:text-gray-500 disabled:ring-gray-200" disabled />
+                            </div>
+                            <button type="submit" class="mt-2 text-sm font-medium text-indigo-600 hover:text-indigo-500" form="send-verification-form">
+                                Gửi lại email xác thực
+                            </button>
+                        }
                     </div>
-                    <label for="email" class="form-label">Email</label>
-                </div>
-            }
-            else
-            {
-                <div class="form-floating mb-3">
-                    <input type="text" value="@email" id="email" class="form-control" placeholder="Enter your email" disabled />
-                    <label for="email" class="form-label">Email</label>
-                    <button type="submit" class="btn btn-link" form="send-verification-form">Send verification email</button>
-                </div>
-            }
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.NewEmail" id="Input.NewEmail" class="form-control" autocomplete="email" aria-required="true" placeholder="Enter a new email" />
-                <label for="Input.NewEmail" class="form-label">New email</label>
-                <ValidationMessage For="() => Input.NewEmail" class="text-danger" />
+
+                    <div>
+                        <label for="Input.NewEmail" class="block text-sm font-medium leading-6 text-gray-900">Email mới</label>
+                        <div class="mt-2">
+                            <InputText @bind-Value="Input.NewEmail" id="Input.NewEmail" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" autocomplete="email" aria-required="true" placeholder="Nhập địa chỉ email mới" />
+                        </div>
+                        <ValidationMessage For="() => Input.NewEmail" class="mt-1 text-sm text-red-600" />
+                    </div>
+
+                    <div class="pt-2">
+                        <button type="submit" class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 sm:w-auto transition-colors">
+                            Thay đổi Email
+                        </button>
+                    </div>
+                </EditForm>
             </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Change email</button>
-        </EditForm>
+        </div>
     </div>
 </div>
 
 @code {
+    // ... (Giữ nguyên code C# gốc) ...
+    // Copy toàn bộ phần @code từ file gốc của bạn vào đây
     private string? message;
     private User? user;
     private string? email;
@@ -69,7 +92,6 @@
     protected override async Task OnInitializedAsync()
     {
         Input ??= new();
-
         user = await UserManager.GetUserAsync(HttpContext.User);
         if (user is null)
         {

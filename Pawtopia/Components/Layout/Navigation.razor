@@ -1,78 +1,143 @@
 ﻿@implements IDisposable
-
 @inject NavigationManager NavigationManager
 
-<div class="flex m-auto max-w-[1200px] px-4 w-full">
-    <NavLink href="" class="flex me-auto">
-        <img class="w-auto h-auto max-h-[30px] object-contain" src="@Assets["assets/images/logo3.png"]" alt="Pawtopia" />
-    </NavLink>
+<header class="sticky top-0 z-50 w-full bg-pink-100/90 backdrop-blur-md border-b border-pink-200 shadow-sm transition-all duration-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+            
+            <div class="flex-shrink-0 flex items-center">
+                <NavLink href="" class="flex items-center gap-2 group outline-none">
+                    <div class="relative overflow-hidden rounded-lg transition-transform duration-300 group-hover:scale-105 group-active:scale-95">
+                        <img class="h-9 w-auto" src="@Assets["assets/images/logo3.png"]" alt="Pawtopia" />
+                    </div>
+                </NavLink>
+            </div>
 
-    <nav class="flex">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
+            <div class="hidden md:flex md:space-x-2 md:items-center">
+                <NavLink href="" Match="NavLinkMatch.All" class="nav-link-pink">
+                    <span class="bi bi-house-door-fill mr-1.5 opacity-70"></span> Trang chủ
+                </NavLink>
+                <NavLink href="messi" class="nav-link-pink">
+                    <span class="bi bi-trophy-fill mr-1.5 opacity-70"></span> Messi
+                </NavLink>
+                <NavLink href="counter" class="nav-link-pink">
+                    <span class="bi bi-plus-square-fill mr-1.5 opacity-70"></span> Counter
+                </NavLink>
+                <NavLink href="weather" class="nav-link-pink">
+                    <span class="bi bi-cloud-sun-fill mr-1.5 opacity-70"></span> Thời tiết
+                </NavLink>
+                <NavLink href="auth" class="nav-link-pink">
+                    <span class="bi bi-shield-lock-fill mr-1.5 opacity-70"></span> Auth Check
+                </NavLink>
+            </div>
+
+            <div class="hidden md:flex md:items-center md:space-x-3">
+                <AuthorizeView>
+                    <Authorized>
+                        <NavLink href="Account/Manage" class="group flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/60 border border-pink-200 hover:bg-white hover:border-pink-300 transition-all duration-300 shadow-sm">
+                            <div class="h-6 w-6 rounded-full bg-pink-200 flex items-center justify-center text-pink-700 text-xs font-bold ring-2 ring-white transition-all">
+                                @(context.User.Identity?.Name?.FirstOrDefault().ToString().ToUpper() ?? "U")
+                            </div>
+                            <span class="text-sm font-medium text-gray-700 group-hover:text-pink-700 max-w-[100px] truncate">
+                                @context.User.Identity?.Name
+                            </span>
+                        </NavLink>
+
+                        <form action="Account/Logout" method="post">
+                            <AntiforgeryToken />
+                            <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                            <button type="submit" class="p-2 rounded-full text-gray-500 hover:text-red-500 hover:bg-white transition-all duration-300" title="Đăng xuất">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                                </svg>
+                            </button>
+                        </form>
+                    </Authorized>
+                    <NotAuthorized>
+                        <NavLink href="Account/Login" class="text-sm font-medium text-gray-700 hover:text-pink-700 px-3 py-2 rounded-md hover:bg-white/50 transition-all duration-200">
+                            Đăng nhập
+                        </NavLink>
+                        <NavLink href="Account/Register" class="inline-flex items-center justify-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-gray-800 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
+                            Đăng ký
+                        </NavLink>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </div>
+
+            <div class="flex items-center md:hidden">
+                <button type="button" @onclick="ToggleMobileMenu" class="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-pink-700 hover:bg-white/50 focus:outline-none transition-colors duration-200">
+                    <span class="sr-only">Open main menu</span>
+                    <svg class="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                    </svg>
+                </button>
+            </div>
         </div>
+    </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="messi">
-                <span class="bi bi-football-nav-menu" aria-hidden="true"></span> Messi
-            </NavLink>
+    <div class="@(isMobileMenuOpen ? "block" : "hidden") md:hidden bg-pink-50 border-t border-pink-200 shadow-lg">
+        <div class="space-y-1 px-4 pb-4 pt-2">
+            <NavLink href="" Match="NavLinkMatch.All" class="mobile-nav-pink" @onclick="CloseMobileMenu">Trang chủ</NavLink>
+            <NavLink href="messi" class="mobile-nav-pink" @onclick="CloseMobileMenu">Messi</NavLink>
+            <NavLink href="counter" class="mobile-nav-pink" @onclick="CloseMobileMenu">Counter</NavLink>
+            <NavLink href="weather" class="mobile-nav-pink" @onclick="CloseMobileMenu">Thời tiết</NavLink>
+            <NavLink href="auth" class="mobile-nav-pink" @onclick="CloseMobileMenu">Auth Check</NavLink>
         </div>
+    </div>
+</header>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
+<style>
+    /* Style riêng cho nền hồng */
+    .nav-link-pink {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #4b5563; /* Gray-600 */
+        border-radius: 0.5rem;
+        transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
+    /* Hover sẽ ra màu trắng nhẹ */
+    .nav-link-pink:hover {
+        background-color: rgba(255, 255, 255, 0.6); 
+        color: #be185d; /* Pink-700 */
+        transform: translateY(-1px);
+    }
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="auth">
-                <span class="bi bi-lock-nav-menu" aria-hidden="true"></span> Check authentication
-            </NavLink>
-        </div>
+    .nav-link-pink.active {
+        background-color: #ffffff; /* White */
+        color: #be185d; /* Pink-700 */
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        font-weight: 600;
+    }
 
-        <AuthorizeView>
-            <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Account/Manage">
-                        <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> @context.User.Identity?.Name
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <form action="Account/Logout" method="post">
-                        <AntiforgeryToken />
-                        <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                        <button type="submit" class="nav-link">
-                            <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
-                        </button>
-                    </form>
-                </div>
-            </Authorized>
-            <NotAuthorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Account/Register">
-                        <span class="bi bi-person-nav-menu" aria-hidden="true"></span> Register
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Account/Login">
-                        <span class="bi bi-person-badge-nav-menu" aria-hidden="true"></span> Login
-                    </NavLink>
-                </div>
-            </NotAuthorized>
-        </AuthorizeView>
-    </nav>
-</div>
+    .mobile-nav-pink {
+        display: block;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        font-weight: 500;
+        color: #374151;
+        border-radius: 0.5rem;
+    }
+
+    .mobile-nav-pink:hover {
+        background-color: rgba(255, 255, 255, 0.6);
+        color: #be185d;
+    }
+    
+    .mobile-nav-pink.active {
+        background-color: white;
+        color: #be185d;
+        border-left: 4px solid #be185d;
+    }
+</style>
 
 @code {
     private string? currentUrl;
+    private bool isMobileMenuOpen = false;
 
     protected override void OnInitialized()
     {
@@ -86,9 +151,11 @@
         StateHasChanged();
     }
 
+    private void ToggleMobileMenu() => isMobileMenuOpen = !isMobileMenuOpen;
+    private void CloseMobileMenu() => isMobileMenuOpen = false;
+
     public void Dispose()
     {
         NavigationManager.LocationChanged -= OnLocationChanged;
     }
 }
-

@@ -9,27 +9,53 @@
 @inject SignInManager<User> SignInManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Profile</PageTitle>
+<PageTitle>Hồ sơ cá nhân</PageTitle>
 
-<h3>Profile</h3>
-<StatusMessage />
+<div class="space-y-6">
+    <div>
+        <h3 class="text-lg font-medium leading-6 text-gray-900">Hồ sơ cá nhân</h3>
+        <p class="mt-1 max-w-2xl text-sm text-gray-500">
+            Quản lý thông tin tài khoản và số điện thoại liên lạc.
+        </p>
+    </div>
 
-<div class="row">
-    <div class="col-xl-6">
-        <EditForm Model="Input" FormName="profile" OnValidSubmit="OnValidSubmitAsync" method="post">
-            <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert" />
-            <div class="form-floating mb-3">
-                <input type="text" value="@username" id="username" class="form-control" placeholder="Choose your username." disabled />
-                <label for="username" class="form-label">Username</label>
-            </div>
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.PhoneNumber" id="Input.PhoneNumber" class="form-control" placeholder="Enter your phone number" />
-                <label for="Input.PhoneNumber" class="form-label">Phone number</label>
-                <ValidationMessage For="() => Input.PhoneNumber" class="text-danger" />
-            </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
-        </EditForm>
+    <StatusMessage />
+
+    <div class="bg-white shadow sm:rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <EditForm Model="Input" FormName="profile" OnValidSubmit="OnValidSubmitAsync" method="post" class="max-w-xl space-y-6">
+                <DataAnnotationsValidator />
+                
+                <div>
+                    <label for="username" class="block text-sm font-medium leading-6 text-gray-900">Tên tài khoản</label>
+                    <div class="mt-2">
+                        <input type="text" 
+                               value="@username" 
+                               id="username" 
+                               class="block w-full rounded-md border-0 py-1.5 text-gray-500 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 bg-gray-50 cursor-not-allowed" 
+                               disabled />
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500">Tên tài khoản không thể thay đổi.</p>
+                </div>
+
+                <div>
+                    <label for="Input.PhoneNumber" class="block text-sm font-medium leading-6 text-gray-900">Số điện thoại</label>
+                    <div class="mt-2">
+                        <InputText @bind-Value="Input.PhoneNumber" 
+                                   id="Input.PhoneNumber" 
+                                   class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" 
+                                   placeholder="Nhập số điện thoại của bạn" />
+                    </div>
+                    <ValidationMessage For="() => Input.PhoneNumber" class="mt-1 text-sm text-red-600" />
+                </div>
+
+                <div class="pt-2 border-t border-gray-100">
+                    <button type="submit" class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 sm:w-auto transition-colors">
+                        Lưu thay đổi
+                    </button>
+                </div>
+            </EditForm>
+        </div>
     </div>
 </div>
 
@@ -80,12 +106,12 @@
         }
 
         await SignInManager.RefreshSignInAsync(user);
-        RedirectManager.RedirectToCurrentPageWithStatus("Your profile has been updated", HttpContext);
+        RedirectManager.RedirectToCurrentPageWithStatus("Hồ sơ của bạn đã được cập nhật thành công.", HttpContext);
     }
 
     private sealed class InputModel
     {
-        [Phone]
+        [Phone(ErrorMessage = "Số điện thoại không đúng định dạng.")]
         [Display(Name = "Phone number")]
         public string? PhoneNumber { get; set; }
     }

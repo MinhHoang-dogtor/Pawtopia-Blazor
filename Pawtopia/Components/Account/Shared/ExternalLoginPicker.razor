@@ -8,34 +8,39 @@
 
 @if (externalLogins.Length == 0)
 {
-    <div>
-        <p>
-            There are no external authentication services configured. See this <a href="https://go.microsoft.com/fwlink/?LinkID=532715">article
-            about setting up this ASP.NET application to support logging in via external services</a>.
-        </p>
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+        <div class="flex">
+            <div class="ml-3">
+                <p class="text-sm text-yellow-700">
+                    Chưa cấu hình dịch vụ xác thực ngoài.
+                    <a href="https://go.microsoft.com/fwlink/?LinkID=532715" class="font-medium underline text-yellow-700 hover:text-yellow-600">Xem hướng dẫn tại đây</a>.
+                </p>
+            </div>
+        </div>
     </div>
 }
 else
 {
-    <form class="form-horizontal" action="Account/PerformExternalLogin" method="post">
-        <div>
-            <AntiforgeryToken />
-            <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
-            <p>
-                @foreach (var provider in externalLogins)
-                {
-                    <button type="submit" class="btn btn-primary" name="provider" value="@provider.Name" title="Log in using your @provider.DisplayName account">@provider.DisplayName</button>
-                }
-            </p>
-        </div>
+    <form class="mt-4 space-y-3" action="Account/PerformExternalLogin" method="post">
+        <AntiforgeryToken />
+        <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
+        
+        @foreach (var provider in externalLogins)
+        {
+            <button type="submit" 
+                    class="w-full flex justify-center py-2.5 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all" 
+                    name="provider" 
+                    value="@provider.Name" 
+                    title="Đăng nhập bằng @provider.DisplayName">
+                <span>Đăng nhập bằng @provider.DisplayName</span>
+            </button>
+        }
     </form>
 }
 
 @code {
     private AuthenticationScheme[] externalLogins = [];
-
-    [SupplyParameterFromQuery]
-    private string? ReturnUrl { get; set; }
+    [SupplyParameterFromQuery] private string? ReturnUrl { get; set; }
 
     protected override async Task OnInitializedAsync()
     {

@@ -9,10 +9,28 @@
 @inject UserManager<User> UserManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Confirm email</PageTitle>
+<PageTitle>Xác thực Email</PageTitle>
 
-<h1>Confirm email</h1>
-<StatusMessage Message="@statusMessage" />
+<div class="max-w-3xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+    <div class="bg-white shadow sm:rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h1 class="text-2xl font-semibold leading-6 text-gray-900 mb-4">Xác thực Email</h1>
+            
+            <div class="mt-2 max-w-xl text-sm text-gray-500">
+                <StatusMessage Message="@statusMessage" />
+            </div>
+            
+            @if (statusMessage != null && statusMessage.Contains("Thank you"))
+            {
+                 <div class="mt-5">
+                    <a href="Account/Login" class="font-medium text-indigo-600 hover:text-indigo-500">
+                        &larr; Đi tới trang Đăng nhập
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
 
 @code {
     private string? statusMessage;
@@ -44,7 +62,7 @@
         {
             var code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(Code));
             var result = await UserManager.ConfirmEmailAsync(user, code);
-            statusMessage = result.Succeeded ? "Thank you for confirming your email." : "Error confirming your email.";
+            statusMessage = result.Succeeded ? "Cảm ơn bạn đã xác thực email." : "Lỗi khi xác thực email.";
         }
     }
 }
