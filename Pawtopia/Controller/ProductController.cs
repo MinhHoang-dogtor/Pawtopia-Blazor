@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Pawtopia.Data;
 using Pawtopia.Models;
-using Pawtopia.Client.DTOs;
+using Pawtopia.DTOs; // <--- SỬA DÒNG NÀY: Dùng DTO của Backend, không dùng của Client
 
 namespace Pawtopia.Controllers
 {
@@ -17,10 +17,10 @@ namespace Pawtopia.Controllers
             _context = context;
         }
 
+        // Lấy tất cả sản phẩm
         [HttpGet("all")]
         public async Task<ActionResult<IEnumerable<GetProduct>>> GetAll()
         {
-            // Fix lỗi CS0103 bằng cách đảm bảo code nằm trong hàm
             var products = await _context.Products
                 .Select(p => new GetProduct
                 {
@@ -28,7 +28,7 @@ namespace Pawtopia.Controllers
                     Name = p.Name,
                     Price = p.Price,
                     Description = p.Description,
-                    ThumbImageLink = p.ThumbImageLink, // Dùng đúng tên ThumbImageLink
+                    ThumbImageLink = p.ThumbImageLink,
                     CategoryId = p.CategoryId,
                     QuantityInStock = p.QuantityInStock,
                     IsActive = p.IsActive
@@ -37,15 +37,15 @@ namespace Pawtopia.Controllers
             return Ok(products);
         }
 
+        // Thêm sản phẩm mới
         [HttpPost("add")]
         public async Task<IActionResult> Add([FromBody] CreateProduct dto)
         {
-            if (dto == null) return BadRequest();
+            if (dto == null) return BadRequest("Dữ liệu không hợp lệ");
 
-            // Fix lỗi CS0103 cho biến dto
             var product = new Product
             {
-                Id = Guid.NewGuid().ToString(),
+                Id = Guid.NewGuid().ToString(), // Tạo ID tự động
                 Name = dto.Name,
                 Price = dto.Price,
                 Description = dto.Description,
@@ -58,7 +58,7 @@ namespace Pawtopia.Controllers
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Thêm thành công!" });
+            return Ok(new { message = "Thêm sản phẩm thành công!" });
         }
     }
 }

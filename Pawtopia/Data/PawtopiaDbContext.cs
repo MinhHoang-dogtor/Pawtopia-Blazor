@@ -1,18 +1,20 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore; // PHẢI ĐỔI DÒNG NÀY
+using Microsoft.EntityFrameworkCore;
 using Pawtopia.Models;
 
 namespace Pawtopia.Data
 {
-    public class PawtopiaDbContext : DbContext
+    // 1. ĐỔI THÀNH IdentityDbContext<User>
+    public class PawtopiaDbContext : IdentityDbContext<User>
     {
         public PawtopiaDbContext(DbContextOptions<PawtopiaDbContext> options)
             : base(options)
         {
         }
 
-        // --- KHAI BÁO CÁC BẢNG (DbSet) ---
-        // Phải có đủ các dòng này thì lệnh Migration mới nhận diện được thay đổi
-        public DbSet<User> Users { get; set; }
+        // 2. XÓA dòng public DbSet<User> Users { get; set; } 
+        // Vì IdentityDbContext đã tự tạo bảng Users cho bạn rồi.
+
         public DbSet<Address> Addresses { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<Product> Products { get; set; }
@@ -23,10 +25,9 @@ namespace Pawtopia.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            base.OnModelCreating(modelBuilder);
+            base.OnModelCreating(modelBuilder); // Luôn giữ dòng này ở đầu
 
-            // Cấu hình tên bảng thủ công (Nếu muốn khớp chính xác với SQLite hiện tại)
-            modelBuilder.Entity<User>().ToTable("Users");
+            // Cấu hình các bảng khác giữ nguyên
             modelBuilder.Entity<Address>().ToTable("Addresses");
             modelBuilder.Entity<Category>().ToTable("Categories");
             modelBuilder.Entity<Product>().ToTable("Products");
@@ -35,7 +36,6 @@ namespace Pawtopia.Data
             modelBuilder.Entity<ShoppingCart>().ToTable("ShoppingCarts");
             modelBuilder.Entity<ShoppingCartItem>().ToTable("ShoppingCartItems");
 
-            // Cấu hình mối quan hệ 1-N (Ví dụ: Một User có nhiều Address)
             modelBuilder.Entity<Address>()
                 .HasOne(a => a.User)
                 .WithMany(u => u.Addresses)

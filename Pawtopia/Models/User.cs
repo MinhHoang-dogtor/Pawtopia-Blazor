@@ -2,26 +2,16 @@
 
 namespace Pawtopia.Models
 {
-    // Định nghĩa danh sách Role cố định
-    public enum UserRole
-    {
-        User,
-        Admin
-    }
+    public enum UserRole { User, Admin }
 
-    public class User
+    // 1. THÊM : IdentityUser
+    public class User : IdentityUser
     {
-        // Các thuộc tính cơ bản
-        public string Id { get; set; } = Guid.NewGuid().ToString();
-        public string? Email { get; set; }
-        public string? UserName { get; set; }
-        public string? PasswordHash { get; set; }
+        // 2. XÓA Id, Email, UserName, PasswordHash (vì IdentityUser đã có sẵn rồi)
 
-        // Các thuộc tính tùy chỉnh
+        // 3. GIỮ LẠI các thuộc tính tùy chỉnh của bạn
         public string? DisplayName { get; set; }
         public string? ProfileImageLink { get; set; }
-
-        // ÉP BUỘC: Chỉ được là User hoặc Admin. Mặc định là User
         public UserRole Role { get; set; } = UserRole.User;
 
         // Quan hệ bảng

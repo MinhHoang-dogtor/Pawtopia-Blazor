@@ -1,93 +1,64 @@
-﻿using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.OpenApi;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Pawtopia.Client.Pages;
-using Pawtopia.Client.Services;
-using Pawtopia.Components;
-using Pawtopia.Components.Account;
 using Pawtopia.Data;
 using Pawtopia.Models;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- 1. ĐĂNG KÝ DỊCH VỤ ---
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents()
-    .AddInteractiveWebAssemblyComponents()
-    .AddAuthenticationStateSerialization();
+// --- 1. DỊCH VỤ API & DATABASE ---
+builder.Services.AddControllers(); // Quan trọng: Để chạy Controller
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(); // Để test API qua giao diện Swagger
 
-builder.Services.AddControllers();
-builder.Services.AddHttpClient();
-builder.Services.AddCascadingAuthenticationState();
-builder.Services.AddScoped<IdentityRedirectManager>();
-builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
-builder.Services.AddScoped<ProductService>();
-
-builder.Services.AddOpenApi();
-
-// Cấu hình CORS
-builder.Services.AddCors(o =>
-{
-    o.AddPolicy("allow", p =>
-        p.AllowAnyOrigin()
-         .AllowAnyHeader()
-         .AllowAnyMethod());
-});
-
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultScheme = IdentityConstants.ApplicationScheme;
-    options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-})
-.AddIdentityCookies();
-
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? "Data Source=Pawtopia.db"; // Backup nếu quên chưa config trong appsettings
-
+// Cấu hình Database
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=Pawtopia.db";
 builder.Services.AddDbContext<PawtopiaDbContext>(options =>
     options.UseSqlite(connectionString));
 
-builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+// --- 2. CẤU HÌNH CORS (Để React gọi được API) ---
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000", "http://localhost:5173") // URL của React (Vite hoặc CRA)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials(); // Quan trọng nếu dùng Cookie/Identity
+    });
+});
 
-// HttpClient để Client gọi vào Server
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7216/") });
-builder.Services.AddSingleton<IEmailSender<User>, IdentityNoOpEmailSender>();
+// --- 3. CẤU HÌNH IDENTITY (Cho Auth) ---
+builder.Services.AddIdentityCore<User>()
+    .AddEntityFrameworkStores<PawtopiaDbContext>()
+    .AddApiEndpoints();
 
-// --- 2. BUILD ---
+builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
+    .AddCookie(IdentityConstants.ApplicationScheme, o => {
+        o.Events.OnRedirectToLogin = context => {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized; // Không redirect về trang Login của Blazor
+            return Task.CompletedTask;
+        };
+    });
+builder.Services.AddAuthorization();
+
 var app = builder.Build();
 
-// --- 3. CẤU HÌNH PIPELINE ---
+// --- 4. CẤU HÌNH PIPELINE ---
 if (app.Environment.IsDevelopment())
 {
-    app.UseWebAssemblyDebugging();
-    app.UseMigrationsEndPoint();
-    // Kích hoạt giao diện test API
-    app.MapOpenApi();
-}
-else
-{
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    app.UseHsts();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles(); // Đưa lên trên để load CSS/JS nhanh hơn
-app.UseAntiforgery();
 
-app.UseCors("allow");
+// Sử dụng CORS
+app.UseCors("AllowReactApp");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
-app.MapStaticAssets();
-
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode()
-    .AddInteractiveWebAssemblyRenderMode()
-    .AddAdditionalAssemblies(typeof(Pawtopia.Client._Imports).Assembly);
-
-app.MapAdditionalIdentityEndpoints();
+app.MapControllers(); // Map các Controller như AuthController, ProductController
 
 app.Run();
