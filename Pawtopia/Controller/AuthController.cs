@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Pawtopia.Data;
 using Pawtopia.Models;
-using Pawtopia.Client.DTOs; // Đảm bảo đã có folder DTOs bên Client
+using Pawtopia.Client.DTOs;
 
 namespace pawtopia.Controllers
 {
@@ -12,7 +12,6 @@ namespace pawtopia.Controllers
     public class AuthController : ControllerBase
     {
         private readonly PawtopiaDbContext _db;
-        // PasswordHasher giúp mã hóa mật khẩu trước khi lưu vào DB riêng
         private readonly PasswordHasher<User> _hasher = new();
 
         public AuthController(PawtopiaDbContext db)
@@ -26,29 +25,31 @@ namespace pawtopia.Controllers
         {
             if (dto == null) return BadRequest("Dữ liệu không hợp lệ");
 
-            // 1. Kiểm tra xem email đã tồn tại trong bảng Users chưa
+            // 1. Kiểm tra email tồn tại
             var exists = await _db.Users.AnyAsync(x => x.Email == dto.Email);
             if (exists)
                 return BadRequest("Tài khoản này đã tồn tại trong hệ thống");
 
-            // 2. Tạo đối tượng User mới
+            // 2. Tạo User mới
             var user = new User
             {
                 Id = Guid.NewGuid().ToString(),
                 Email = dto.Email,
                 UserName = dto.Email,
                 DisplayName = dto.Name,
-                ProfileImageLink = "" // Có thể bổ sung sau
+                ProfileImageLink = "",
+                // SỬA LỖI CS0029: Gán bằng Enum thay vì string
+                Role = UserRole.User
             };
 
-            // 3. Mã hóa mật khẩu (Không bao giờ lưu mật khẩu dạng chữ thuần)
+            // 3. Mã hóa mật khẩu
             user.PasswordHash = _hasher.HashPassword(user, dto.Password);
 
-            // 4. Lưu vào Database riêng của bạn
+            // 4. Lưu vào DB
             _db.Users.Add(user);
             await _db.SaveChangesAsync();
 
-            return Ok(new { message = "Đăng ký thành công!" });
+            return Ok(new { message = "Đăng ký thành công!", role = user.Role.ToString() });
         }
 
         // ========= ĐĂNG NHẬP (LOGIN) =========
@@ -62,17 +63,25 @@ namespace pawtopia.Controllers
             if (user == null)
                 return BadRequest("Tài khoản không tồn tại");
 
-            // 2. Giải mã và kiểm tra mật khẩu
-            var result = _hasher.VerifyHashedPassword(user, user.PasswordHash, dto.Password);
+            // 2. Kiểm tra mật khẩu
+            // SỬA CẢNH BÁO CS8604: Thêm dấu ! để xác nhận PasswordHash không null
+            var result = _hasher.VerifyHashedPassword(user, user.PasswordHash!, dto.Password);
 
             if (result == PasswordVerificationResult.Failed)
                 return BadRequest("Mật khẩu không chính xác");
 
-            // 3. Trả về thông tin cơ bản (sau này bạn có thể trả về JWT Token ở đây)
+            // 3. Trả về thông tin kèm theo Role
             return Ok(new
             {
                 message = "Đăng nhập thành công",
-                user = new { user.Id, user.Email, user.DisplayName }
+                user = new
+                {
+                    user.Id,
+                    user.Email,
+                    user.DisplayName,
+                    // Trả về string của Enum để Client dễ đọc
+                    Role = user.Role.ToString()
+                }
             });
         }
     }

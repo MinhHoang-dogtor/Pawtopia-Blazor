@@ -52,13 +52,13 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 // HttpClient để Client gọi vào Server
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7216/") });
 
-builder.Services.AddIdentityCore<User>(options =>
+/*builder.Services.AddIdentityCore<User>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false; // Tắt xác nhận mail để test cho nhanh
 })
 .AddEntityFrameworkStores<PawtopiaDbContext>()
 .AddSignInManager()
-.AddDefaultTokenProviders();
+.AddDefaultTokenProviders();*/
 
 builder.Services.AddSingleton<IEmailSender<User>, IdentityNoOpEmailSender>();
 
