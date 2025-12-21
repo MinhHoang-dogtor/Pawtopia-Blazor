@@ -1,12 +1,13 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.EntityFrameworkCore;
 using Pawtopia.Client.Pages;
+using Pawtopia.Client.Services;
 using Pawtopia.Components;
 using Pawtopia.Components.Account;
 using Pawtopia.Data;
 using Pawtopia.Models;
-using Microsoft.AspNetCore.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +22,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
+builder.Services.AddScoped<ProductService>();
 
 builder.Services.AddOpenApi();
 
@@ -28,10 +30,9 @@ builder.Services.AddOpenApi();
 builder.Services.AddCors(o =>
 {
     o.AddPolicy("allow", p =>
-        p.WithOrigins("https://localhost:7216")
-         .AllowAnyMethod()
+        p.AllowAnyOrigin()
          .AllowAnyHeader()
-         .AllowCredentials());
+         .AllowAnyMethod());
 });
 
 builder.Services.AddAuthentication(options =>
@@ -51,15 +52,6 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 // HttpClient để Client gọi vào Server
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7216/") });
-
-/*builder.Services.AddIdentityCore<User>(options =>
-{
-    options.SignIn.RequireConfirmedAccount = false; // Tắt xác nhận mail để test cho nhanh
-})
-.AddEntityFrameworkStores<PawtopiaDbContext>()
-.AddSignInManager()
-.AddDefaultTokenProviders();*/
-
 builder.Services.AddSingleton<IEmailSender<User>, IdentityNoOpEmailSender>();
 
 // --- 2. BUILD ---
