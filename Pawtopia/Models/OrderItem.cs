@@ -1,20 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace Pawtopia.Models
+﻿namespace Pawtopia.Models
 {
-
     public class OrderItem
     {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public long Quantity { get; set; }
+        public string ProductItemId { get; set; } = null!;
+        public string OrderId { get; set; } = null!;
 
-        [Key]
-        public string Id { get; set; } = String.Empty;
-
-        public uint Quantity { get; set; }
-
-        public string ProductItemId { get; set; } = String.Empty;
-        public ProductItem ProductItem { get; set; } = default!;
-
-        public string OrderId { get; set; } = String.Empty;
-        public Order Order { get; set; } = default!;
+        public virtual Order Order { get; set; } = null!;
     }
 }

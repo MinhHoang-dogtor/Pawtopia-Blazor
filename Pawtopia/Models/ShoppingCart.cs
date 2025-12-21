@@ -1,15 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace Pawtopia.Models
+﻿namespace Pawtopia.Models
 {
-
     public class ShoppingCart
     {
-
-        [Key]
-        public string Id { get; set; } = String.Empty;
-
-        public string UserId { get; set; } = String.Empty;
-        public User User { get; set; } = default!;
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public string UserId { get; set; } = null!;
     }
 }

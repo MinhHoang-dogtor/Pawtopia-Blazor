@@ -10,7 +10,7 @@ using Pawtopia.Data;
 namespace Pawtopia.Migrations
 {
     [DbContext(typeof(PawtopiaDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    partial class PawtopiaDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
@@ -145,6 +145,184 @@ namespace Pawtopia.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Pawtopia.Models.Address", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AddressLine")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Province")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Ward")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Addresses", (string)null);
+                });
+
+            modelBuilder.Entity("Pawtopia.Models.Category", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NormalizedName")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Categories", (string)null);
+                });
+
+            modelBuilder.Entity("Pawtopia.Models.Order", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AddressId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("IsPaid")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("PaymentStatus")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Orders", (string)null);
+                });
+
+            modelBuilder.Entity("Pawtopia.Models.OrderItem", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OrderId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProductItemId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("Quantity")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("OrderItems", (string)null);
+                });
+
+            modelBuilder.Entity("Pawtopia.Models.Product", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CategoryId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("Price")
+                        .HasColumnType("REAL");
+
+                    b.Property<long>("QuantityInStock")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ThumbImageLink")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.ToTable("Products", (string)null);
+                });
+
+            modelBuilder.Entity("Pawtopia.Models.ShoppingCart", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ShoppingCarts", (string)null);
+                });
+
+            modelBuilder.Entity("Pawtopia.Models.ShoppingCartItem", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProductItemId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ShoppingCartId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ShoppingCartId");
+
+                    b.ToTable("ShoppingCartItems", (string)null);
+                });
+
             modelBuilder.Entity("Pawtopia.Models.User", b =>
                 {
                     b.Property<string>("Id")
@@ -158,7 +336,6 @@ namespace Pawtopia.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("DisplayName")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Email")
@@ -192,8 +369,10 @@ namespace Pawtopia.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("ProfileImageLink")
-                        .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("TEXT");
@@ -266,6 +445,78 @@ namespace Pawtopia.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Pawtopia.Models.Address", b =>
+                {
+                    b.HasOne("Pawtopia.Models.User", "User")
+                        .WithMany("Addresses")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Pawtopia.Models.Order", b =>
+                {
+                    b.HasOne("Pawtopia.Models.User", "User")
+                        .WithMany("Orders")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Pawtopia.Models.OrderItem", b =>
+                {
+                    b.HasOne("Pawtopia.Models.Order", "Order")
+                        .WithMany("OrderItems")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("Pawtopia.Models.Product", b =>
+                {
+                    b.HasOne("Pawtopia.Models.Category", "Category")
+                        .WithMany("Products")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("Pawtopia.Models.ShoppingCartItem", b =>
+                {
+                    b.HasOne("Pawtopia.Models.ShoppingCart", "ShoppingCart")
+                        .WithMany()
+                        .HasForeignKey("ShoppingCartId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ShoppingCart");
+                });
+
+            modelBuilder.Entity("Pawtopia.Models.Category", b =>
+                {
+                    b.Navigation("Products");
+                });
+
+            modelBuilder.Entity("Pawtopia.Models.Order", b =>
+                {
+                    b.Navigation("OrderItems");
+                });
+
+            modelBuilder.Entity("Pawtopia.Models.User", b =>
+                {
+                    b.Navigation("Addresses");
+
+                    b.Navigation("Orders");
                 });
 #pragma warning restore 612, 618
         }

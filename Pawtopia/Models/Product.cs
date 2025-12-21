@@ -1,24 +1,16 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace Pawtopia.Models
+﻿namespace Pawtopia.Models
 {
-
     public class Product
     {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public long IsActive { get; set; } 
+        public string Name { get; set; } = null!;
+        public string? Description { get; set; }
+        public string? ThumbImageLink { get; set; }
+        public string CategoryId { get; set; } = null!;
+        public long QuantityInStock { get; set; }
+        public double? Price { get; set; }
 
-        [Key]
-        public string Id { get; set; } = String.Empty;
-
-        public bool IsActive { get; set; }
-
-        public string Name { get; set; } = String.Empty;
-        public string Description { get; set; } = String.Empty;
-        public string ThumbImageLink { get; set; } = String.Empty;
-
-        [Range(0, float.MaxValue, ErrorMessage = "Discount không được âm!")]
-        public float? SaleDiscount { get; set; }
-
-        public string CategoryId { get; set; } = String.Empty;
-        public Category Category { get; set; } = default!;
+        public virtual Category Category { get; set; } = null!;
     }
 }
