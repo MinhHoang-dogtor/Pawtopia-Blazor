@@ -38,7 +38,7 @@ namespace Pawtopia.API.Controllers
                     Id = Guid.NewGuid().ToString(),
                     FullName = request.FullName,
                     PhoneNumber = request.PhoneNumber,
-                    AddressLine = request.AddressLine,
+                    DetailAddress = request.AddressLine,
                     Ward = request.Ward,
                     Province = request.Province,
                     UserId = request.UserId // Gắn địa chỉ này với User đó

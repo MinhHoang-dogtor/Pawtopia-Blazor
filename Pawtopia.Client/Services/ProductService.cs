@@ -1,43 +1,36 @@
 ﻿using System.Net.Http.Json;
-using Pawtopia.Client.DTOs;
+using Pawtopia.Client.DTOs; // Đảm bảo đúng namespace chứa GetProduct, CreateProduct...
 
 namespace Pawtopia.Client.Services
 {
     public class ProductService
     {
         private readonly HttpClient _http;
-        public ProductService(HttpClient http) => _http = http;
 
-        // Lấy tất cả sản phẩm
-        public async Task<List<GetProduct>> GetProductsAsync()
-            => await _http.GetFromJsonAsync<List<GetProduct>>("api/product/all") ?? new();
-
-        // Thêm mới
-        public async Task<bool> AddProductAsync(CreateProduct dto)
+        public ProductService(HttpClient http)
         {
-            var res = await _http.PostAsJsonAsync("api/product/add", dto);
-            return res.IsSuccessStatusCode;
+            _http = http;
         }
 
-        // Cập nhật (Sửa thông tin hoặc Ẩn/Hiện qua IsActive)
-        public async Task<bool> UpdateProductAsync(GetProduct dto)
+        // 1. Lấy toàn bộ sản phẩm để hiện lên Shop
+        public async Task<List<GetProduct>> GetAllAsync()
         {
-            var res = await _http.PutAsJsonAsync("api/product/update", dto);
-            return res.IsSuccessStatusCode;
+            var result = await _http.GetFromJsonAsync<List<GetProduct>>("api/product/all");
+            return result ?? new List<GetProduct>();
         }
 
-        // Xóa vĩnh viễn
-        public async Task<bool> DeletePermanentAsync(string id)
+        // 2. Thêm sản phẩm mới (Yêu cầu Role Admin)
+        public async Task<bool> AddAsync(CreateProduct product)
         {
-            var res = await _http.DeleteAsync($"api/product/delete-permanent/{id}");
-            return res.IsSuccessStatusCode;
+            var response = await _http.PostAsJsonAsync("api/product/add", product);
+            return response.IsSuccessStatusCode;
         }
 
-        // Bật/Tắt IsActive nhanh
-        public async Task<bool> ToggleActiveAsync(string id)
+        // 3. Xóa sản phẩm
+        public async Task<bool> DeleteAsync(Guid id)
         {
-            var res = await _http.PatchAsync($"api/product/toggle-active/{id}", null);
-            return res.IsSuccessStatusCode;
+            var response = await _http.DeleteAsync($"api/product/delete/{id}");
+            return response.IsSuccessStatusCode;
         }
     }
 }

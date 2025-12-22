@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Pawtopia.Models
 {
@@ -8,18 +7,30 @@ namespace Pawtopia.Models
         [Key]
         public string Id { get; set; } = Guid.NewGuid().ToString();
 
-        public string FullName { get; set; } = null!; 
+        [Required]
+        public string UserId { get; set; } = null!; // Liên kết với bảng User
 
-        public string PhoneNumber { get; set; } = null!; 
+        [Required]
+        public string FullName { get; set; } = null!; // Họ và tên người nhận
 
-        public string AddressLine { get; set; } = null!; 
+        [Required]
+        public string PhoneNumber { get; set; } = null!; // Số điện thoại
 
-        public string Ward { get; set; } = null!;
+        [Required]
+        public string Province { get; set; } = null!; // Tỉnh/Thành phố
 
-        public string Province { get; set; } = null!;
+        [Required]
+        public string District { get; set; } = null!; // Quận/Huyện
 
-        [ForeignKey("User")]
-        public string UserId { get; set; } = null!; 
-        public virtual User User { get; set; } = null!;
+        [Required]
+        public string Ward { get; set; } = null!; // Phường/Xã
+
+        [Required]
+        public string DetailAddress { get; set; } = null!; // Số nhà, tên đường cụ thể
+
+        public bool IsDefault { get; set; } = false; // Đặt làm mặc định hay không
+
+        // Link ngược lại bảng User (nếu cần)
+        public virtual User? User { get; set; }
     }
 }

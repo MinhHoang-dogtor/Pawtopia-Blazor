@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using Microsoft.AspNetCore.Authentication.Cookies; // Thêm cái này để dùng Cookie chuẩn
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.OpenApi;
@@ -11,7 +11,7 @@ using Pawtopia.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- 1. ĐĂNG KÝ DỊCH VỤ (SERVICES) ---
+// --- 1. ĐĂNG KÝ DỊCH VỤ ---
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents()
@@ -21,17 +21,14 @@ builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<ProductService>();
 
-// Cấu hình Swagger - PHẢI NẰM TRÊN builder.Build()
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-// CẤU HÌNH AUTHENTICATION
-builder.Services.AddAuthentication("MyCookie")
+// --- PHẦN QUAN TRỌNG: CẤU HÌNH AUTHENTICATION RIÊNG (KHÔNG IDENTITY) ---
+builder.Services.AddAuthentication("MyCookie") // Thiết lập "MyCookie" làm Default Scheme
     .AddCookie("MyCookie", options => {
         options.Cookie.Name = "PawtopiaAuth";
         options.LoginPath = "/login";
         options.AccessDeniedPath = "/shop";
         options.ExpireTimeSpan = TimeSpan.FromDays(7);
+        // Quan trọng: Để Client (WASM) có thể đọc được trạng thái login
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Strict;
     });
@@ -49,7 +46,7 @@ builder.Services.AddCors(o =>
          .AllowAnyMethod());
 });
 
-// KẾT NỐI DATABASE
+// --- KẾT NỐI DATABASE ---
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? "Data Source=Pawtopia.db";
 
@@ -64,19 +61,14 @@ builder.Services.AddScoped(sp => new HttpClient
     BaseAddress = new Uri(builder.Configuration["BaseAddress"] ?? "https://localhost:7216/")
 });
 
-// --- DÒNG CHỐT CHẶN: BUILD APP ---
-var app = builder.Build(); // SAU DÒNG NÀY KHÔNG ĐƯỢC DÙNG builder.Services NỮA
+var app = builder.Build();
 
-// --- 2. CẤU HÌNH PIPELINE (MIDDLEWARE) ---
+// --- 2. CẤU HÌNH PIPELINE ---
 if (app.Environment.IsDevelopment())
 {
     app.UseWebAssemblyDebugging();
     app.UseMigrationsEndPoint();
     app.MapOpenApi();
-
-    // Bật Swagger UI
-    app.UseSwagger();
-    app.UseSwaggerUI();
 }
 else
 {
@@ -90,7 +82,7 @@ app.UseAntiforgery();
 
 app.UseCors("allow");
 
-// Thứ tự Auth cực kỳ quan trọng
+// Thứ tự này cực kỳ quan trọng
 app.UseAuthentication();
 app.UseAuthorization();
 

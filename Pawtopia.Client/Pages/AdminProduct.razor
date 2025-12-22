@@ -1,66 +1,16 @@
 ﻿@page "/admin/products"
+@using Microsoft.AspNetCore.Authorization
 @using Pawtopia.Client.DTOs
-@using Pawtopia.Client.Services
-@inject ProductService ProductSvc
+@attribute [Authorize(Roles = "Admin")] 
+@inject HttpClient Http
 
-<h3>Quản lý sản phẩm (Admin Test)</h3>
-
-@if (products == null)
-{
-    <p><em>Đang tải dữ liệu...</em></p>
-}
-else
-{
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Tên</th>
-                <th>Giá gốc</th>
-                <th>Giảm giá</th>
-                <th>Trạng thái</th>
-                <th>Hành động</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var p in products)
-            {
-                <tr style="@(p.IsActive == 0 ? "opacity: 0.5; background: #eee;" : "")">
-                    <td>@p.Name</td>
-                    <td>@p.Price?.ToString("N0") đ</td>
-                    <td>@(p.IsDiscount == 1 ? (p.SaleDiscount ) + "%" : "0")</td>
-                    <td>@(p.IsActive == 1 ? "Đang hiện" : "Đã ẩn")</td>
-                    <td>
-                        <button class="btn btn-sm btn-warning" @onclick="() => ToggleActive(p.Id)">
-                            @(p.IsActive == 1 ? "Ẩn" : "Hiện")
-                        </button>
-                        <button class="btn btn-sm btn-danger" @onclick="() => Delete(p.Id)">Xóa vĩnh viễn</button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
-
-@code {
-    private List<GetProduct>? products;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadProducts();
-    }
-
-    private async Task LoadProducts()
-    {
-        products = await ProductSvc.GetProductsAsync();
-    }
-
-    private async Task ToggleActive(string id)
-    {
-        if (await ProductSvc.ToggleActiveAsync(id)) await LoadProducts();
-    }
-
-    private async Task Delete(string id)
-    {
-        if (await ProductSvc.DeletePermanentAsync(id)) await LoadProducts();
-    }
-}
+<AuthorizeView Roles="Admin">
+    <Authorized>
+        <div class="container mt-4">
+            <h3 class="text-danger">🛠 Quản lý kho hàng (Admin Only)</h3>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="alert alert-warning">Bạn không có quyền truy cập trang này.</div>
+    </NotAuthorized>
+</AuthorizeView>

@@ -102,12 +102,14 @@ namespace Pawtopia.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "TEXT", nullable: false),
+                    UserId = table.Column<string>(type: "TEXT", nullable: false),
                     FullName = table.Column<string>(type: "TEXT", nullable: false),
                     PhoneNumber = table.Column<string>(type: "TEXT", nullable: false),
-                    AddressLine = table.Column<string>(type: "TEXT", nullable: false),
-                    Ward = table.Column<string>(type: "TEXT", nullable: false),
                     Province = table.Column<string>(type: "TEXT", nullable: false),
-                    UserId = table.Column<string>(type: "TEXT", nullable: false)
+                    District = table.Column<string>(type: "TEXT", nullable: false),
+                    Ward = table.Column<string>(type: "TEXT", nullable: false),
+                    DetailAddress = table.Column<string>(type: "TEXT", nullable: false),
+                    IsDefault = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
