@@ -1,7 +1,10 @@
-﻿﻿<Router AppAssembly="typeof(Program).Assembly" AdditionalAssemblies="new[] { typeof(Client._Imports).Assembly }" NotFoundPage="typeof(Pages.NotFound)">
+﻿<Router AppAssembly="typeof(Program).Assembly" AdditionalAssemblies="new[] { typeof(Pawtopia.Client._Imports).Assembly }">
     <Found Context="routeData">
         <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
             <NotAuthorized>
+                @* Nếu không có quyền, hiện thông báo thay vì để trống gây lỗi vòng lặp *@
+                <p>Bố chưa đăng nhập hoặc không có quyền vào đây.</p>
+                <a href="/login">Đi tới trang Đăng nhập</a>
             </NotAuthorized>
         </AuthorizeRouteView>
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
