@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore; // DÒNG NÀY ĐỂ HẾT LỖI CS1061
+using Microsoft.EntityFrameworkCore;
 using Pawtopia.Data;
 using Pawtopia.Models;
 
@@ -17,7 +17,6 @@ namespace Pawtopia.Controllers
         [HttpGet("my-addresses")]
         public async Task<IActionResult> GetMyAddresses()
         {
-            // Trả về hết để bố test cho nhanh
             return Ok(await _db.Addresses.ToListAsync());
         }
 
@@ -33,18 +32,27 @@ namespace Pawtopia.Controllers
             }
 
             var existing = await _db.Addresses.FirstOrDefaultAsync(x => x.Id == dto.Id);
+
             if (existing == null)
             {
+                // Nếu chưa có Id (thêm mới), gán Id mới cho chắc chắn
+                if (string.IsNullOrEmpty(dto.Id)) dto.Id = Guid.NewGuid().ToString();
                 _db.Addresses.Add(dto);
+                await _db.SaveChangesAsync();
+
+                // Trả về chính cái dto vừa thêm mới
+                return Ok(dto);
             }
             else
             {
+                // Cập nhật dữ liệu
                 _db.Entry(existing).CurrentValues.SetValues(dto);
                 existing.UserId = dto.UserId;
-            }
+                await _db.SaveChangesAsync();
 
-            await _db.SaveChangesAsync();
-            return Ok();
+                // Trả về cái existing đã được cập nhật
+                return Ok(existing);
+            }
         }
 
         [HttpDelete("delete/{id}")]
