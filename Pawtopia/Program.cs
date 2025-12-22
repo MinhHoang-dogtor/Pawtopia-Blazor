@@ -38,12 +38,13 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddOpenApi();
 
 // Cấu hình CORS
-builder.Services.AddCors(options => {
-    options.AddDefaultPolicy(policy => {
-        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
-    });
+builder.Services.AddCors(o =>
+{
+    o.AddPolicy("allow", p =>
+        p.AllowAnyOrigin()
+         .AllowAnyHeader()
+         .AllowAnyMethod());
 });
-
 // --- KẾT NỐI DATABASE ---
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? "Data Source=Pawtopia.db";
