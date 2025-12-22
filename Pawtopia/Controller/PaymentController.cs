@@ -96,10 +96,8 @@ namespace Pawtopia.API.Controllers
                     };
                     orderItemsList.Add(orderItem);
 
-                    // Cộng dồn tổng tiền (Dùng giá DB để an toàn, hoặc dùng itemDto.Price nếu bạn chấp nhận rủi ro)
-                    // Ở đây tôi dùng giá từ DB * số lượng
-                    // Nếu Product có trường Price là float/double/decimal, hãy ép kiểu phù hợp.
-                    // Giả sử Price trong DB của bạn là 'real' (float/double)
+                    // Cộng dồn tổng tiền 
+                    // Ở đây dùng giá từ DB * số lượng
                     if (product.Price != null)
                     {
                         totalAmountCalculated += (double)product.Price * itemDto.Quantity;

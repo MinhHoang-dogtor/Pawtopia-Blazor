@@ -21,9 +21,10 @@ namespace Pawtopia.Models
 
         [Required]
         public string District { get; set; } = null!; // Quận/Huyện
-
+        
         [Required]
         public string Ward { get; set; } = null!; // Phường/Xã
+
 
         [Required]
         public string DetailAddress { get; set; } = null!; // Số nhà, tên đường cụ thể
