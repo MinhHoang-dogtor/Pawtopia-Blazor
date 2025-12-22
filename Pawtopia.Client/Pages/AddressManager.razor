@@ -1,0 +1,200 @@
+﻿@page "/user/addresses"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject HttpClient Http
+@inject NavigationManager Nav
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold m-0 text-dark">Địa chỉ của tôi</h4>
+        <button class="btn btn-danger px-4 shadow-sm" @onclick="() => OpenModal()">+ Thêm địa chỉ mới</button>
+    </div>
+
+    <hr />
+
+    @if (isLoading)
+    {
+        <div class="text-center p-5">
+            <div class="spinner-border text-danger" role="status"></div>
+            <p class="mt-2 text-muted">Đang tải dữ liệu...</p>
+        </div>
+    }
+    else if (userAddresses == null || !userAddresses.Any())
+    {
+        <div class="text-center p-5 border rounded bg-light shadow-sm">
+            <p class="text-muted mb-0">Bạn chưa có địa chỉ nào. Hãy thêm địa chỉ mới nhé!</p>
+        </div>
+    }
+    else
+    {
+        @foreach (var item in userAddresses)
+        {
+            <div class="card mb-3 p-3 shadow-sm border-0 bg-white border-start border-danger border-4">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="text-dark">
+                        <div class="d-flex align-items-center mb-1">
+                            <span class="fw-bold me-2" style="font-size: 1.1rem;">@item.FullName</span>
+                            <span class="text-muted" style="border-left: 1px solid #ddd; padding-left: 10px;">@item.PhoneNumber</span>
+                        </div>
+                        <p class="mb-1">@item.DetailAddress</p>
+                        <p class="mb-2">@item.Ward, @item.District, @item.Province</p>
+                        @if (item.IsDefault)
+                        {
+                            <span class="badge bg-danger fw-normal">Mặc định</span>
+                        }
+                    </div>
+                    <div class="text-end">
+                        <button class="btn btn-link text-primary text-decoration-none p-0 me-3" @onclick="() => OpenModal(item)">Sửa</button>
+                        <button class="btn btn-link text-danger text-decoration-none p-0" @onclick="() => Delete(item.Id)">Xóa</button>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+
+    @if (showModal)
+    {
+        <div class="modal d-block" style="background: rgba(0,0,0,0.6); z-index: 1050;">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content p-4 border-0 shadow-lg bg-white text-dark">
+                    <h5 class="fw-bold mb-4 border-bottom pb-2 text-dark">@(string.IsNullOrEmpty(editAddr.Id) || editAddr.Id.Contains("0000") ? "Thêm địa chỉ mới" : "Cập nhật địa chỉ")</h5>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger py-2" style="font-size: 0.9rem;">@errorMessage</div>
+                    }
+
+                    <div class="row g-2">
+                        <div class="col-6"><input class="form-control" @bind="editAddr.FullName" placeholder="Họ và tên" /></div>
+                        <div class="col-6"><input class="form-control" @bind="editAddr.PhoneNumber" placeholder="Số điện thoại" /></div>
+
+                        <div class="col-12 mt-3 text-dark">
+                            <label class="small fw-bold mb-1">Tỉnh / Thành phố</label>
+                            <select class="form-select" @onchange="OnProvinceChange">
+                                <option value="">-- Chọn Tỉnh/Thành phố --</option>
+                                @foreach (var p in provinceList)
+                                {
+                                    <option value="@p.Id" selected="@(editAddr.Province == p.Name)">@p.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 mt-2 text-dark">
+                            <label class="small fw-bold mb-1">Quận / Huyện</label>
+                            <select class="form-select" @onchange="OnDistrictChange" disabled="@(!districtList.Any())">
+                                <option value="">-- Chọn Quận/Huyện --</option>
+                                @foreach (var d in districtList)
+                                {
+                                    <option value="@d.Id" selected="@(editAddr.District == d.Name)">@d.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 mt-2 text-dark">
+                            <label class="small fw-bold mb-1">Phường / Xã</label>
+                            <select class="form-select" @bind="editAddr.Ward" disabled="@(!wardList.Any())">
+                                <option value="">-- Chọn Phường/Xã --</option>
+                                @foreach (var w in wardList)
+                                {
+                                    <option value="@w.Name">@w.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-12 mt-3"><textarea class="form-control" @bind="editAddr.DetailAddress" placeholder="Địa chỉ cụ thể" rows="2"></textarea></div>
+                    </div>
+
+                    <div class="form-check mt-3 text-dark">
+                        <input type="checkbox" class="form-check-input" @bind="editAddr.IsDefault" id="chkDefault">
+                        <label class="form-check-label" for="chkDefault">Đặt làm mặc định</label>
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-4 pt-3 border-top">
+                        <button class="btn btn-light px-4 me-2 border text-dark" @onclick="() => showModal = false">Trở Lại</button>
+                        <button class="btn btn-danger px-4" @onclick="Save">Hoàn Thành</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Address>? userAddresses;
+    private Address editAddr = new();
+    private bool showModal = false, isLoading = true;
+    private string errorMessage = "";
+    private List<Location> provinceList = new(), districtList = new(), wardList = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadData();
+            try
+            {
+                // API Esgoo lấy Tỉnh
+                var res = await Http.GetFromJsonAsync<EsgooResponse>("https://esgoo.net/api-tinhthanh/1/0.htm");
+                provinceList = res?.Data ?? new();
+            }
+            catch { }
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnProvinceChange(ChangeEventArgs e)
+    {
+        var code = e.Value?.ToString();
+        if (string.IsNullOrEmpty(code)) return;
+        editAddr.Province = provinceList.FirstOrDefault(x => x.Id == code)?.Name ?? "";
+
+        // API Esgoo lấy Quận
+        var res = await Http.GetFromJsonAsync<EsgooResponse>($"https://esgoo.net/api-tinhthanh/2/{code}.htm");
+        districtList = res?.Data ?? new();
+        wardList.Clear();
+        StateHasChanged();
+    }
+
+    private async Task OnDistrictChange(ChangeEventArgs e)
+    {
+        var code = e.Value?.ToString();
+        if (string.IsNullOrEmpty(code)) return;
+        editAddr.District = districtList.FirstOrDefault(x => x.Id == code)?.Name ?? "";
+
+        // API Esgoo lấy Phường
+        var res = await Http.GetFromJsonAsync<EsgooResponse>($"https://esgoo.net/api-tinhthanh/3/{code}.htm");
+        wardList = res?.Data ?? new();
+        StateHasChanged();
+    }
+
+    private async Task LoadData()
+    {
+        try { userAddresses = await Http.GetFromJsonAsync<List<Address>>("api/address/my-addresses"); }
+        catch { userAddresses = new List<Address>(); }
+        StateHasChanged();
+    }
+
+    private async Task Save()
+    {
+        if (string.IsNullOrWhiteSpace(editAddr.FullName) || string.IsNullOrWhiteSpace(editAddr.Province))
+        {
+            errorMessage = "Vui lòng nhập đủ thông tin!"; return;
+        }
+        var res = await Http.PostAsJsonAsync("api/address/save", editAddr);
+        if (res.IsSuccessStatusCode) { showModal = false; await LoadData(); }
+    }
+
+    private async Task Delete(string id)
+    {
+        await Http.DeleteAsync($"api/address/delete/{id}"); await LoadData();
+    }
+
+    private void OpenModal(Address? item = null)
+    {
+        errorMessage = "";
+        if (item != null) editAddr = new Address { Id = item.Id, FullName = item.FullName, PhoneNumber = item.PhoneNumber, Province = item.Province, District = item.District, Ward = item.Ward, DetailAddress = item.DetailAddress, IsDefault = item.IsDefault, UserId = item.UserId };
+        else editAddr = new Address();
+        showModal = true;
+    }
+
+    public class EsgooResponse { public List<Location> Data { get; set; } = new(); }
+    public class Location { public string Id { get; set; } = ""; public string Name { get; set; } = ""; }
+}

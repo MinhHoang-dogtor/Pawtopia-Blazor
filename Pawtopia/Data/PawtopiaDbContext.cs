@@ -34,12 +34,6 @@ namespace Pawtopia.Data
             modelBuilder.Entity<OrderItem>().ToTable("OrderItems");
             modelBuilder.Entity<ShoppingCart>().ToTable("ShoppingCarts");
             modelBuilder.Entity<ShoppingCartItem>().ToTable("ShoppingCartItems");
-
-            // Cấu hình mối quan hệ 1-N (Ví dụ: Một User có nhiều Address)
-            modelBuilder.Entity<Address>()
-                .HasOne(a => a.User)
-                .WithMany(u => u.Addresses)
-                .HasForeignKey(a => a.UserId);
         }
     }
 }

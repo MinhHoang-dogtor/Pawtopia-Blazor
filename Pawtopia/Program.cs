@@ -38,12 +38,10 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddOpenApi();
 
 // Cấu hình CORS
-builder.Services.AddCors(o =>
-{
-    o.AddPolicy("allow", p =>
-        p.AllowAnyOrigin()
-         .AllowAnyHeader()
-         .AllowAnyMethod());
+builder.Services.AddCors(options => {
+    options.AddDefaultPolicy(policy => {
+        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+    });
 });
 
 // --- KẾT NỐI DATABASE ---
@@ -56,9 +54,21 @@ builder.Services.AddDbContext<PawtopiaDbContext>(options =>
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 // HttpClient dùng địa chỉ động
-builder.Services.AddScoped(sp => new HttpClient
+builder.Services.AddScoped(sp =>
 {
-    BaseAddress = new Uri(builder.Configuration["BaseAddress"] ?? "https://localhost:7216/")
+    var handler = new HttpClientHandler
+    {
+        UseCookies = true,
+        CookieContainer = new System.Net.CookieContainer(),
+        AllowAutoRedirect = false
+    };
+
+    // Nếu bố chạy HTTPS thì để https, chạy HTTP thường thì đổi lại nhé
+    var client = new HttpClient(handler)
+    {
+        BaseAddress = new Uri("https://localhost:7216/")
+    };
+    return client;
 });
 
 var app = builder.Build();
