@@ -39,8 +39,12 @@ builder.Services.AddOpenApi();
 
 // Cấu hình CORS
 builder.Services.AddCors(options => {
-    options.AddDefaultPolicy(policy => {
-        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+    options.AddPolicy("allow", policy => {
+        // TODO: Production URLs
+        policy.WithOrigins("http://localhost:5173") // Vite's default port
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
