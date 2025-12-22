@@ -1,0 +1,35 @@
+﻿@page "/shop"
+@using Pawtopia.Client.DTOs
+@inject HttpClient Http
+
+<div class="container mt-4">
+    <h3>🛒 Cửa hàng thú cưng Pawtopia</h3>
+    <div class="row">
+        @if (products == null)
+        {
+            <p>Đang tải...</p>
+        }
+        else
+        {
+            @foreach (var p in products)
+            {
+                <div class="col-md-3 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <img src="@p.ThumbImageLink" class="card-img-top" style="height: 200px; object-fit: cover;">
+                        <div class="card-body">
+                            <h5 class="card-title">@p.Name</h5>
+                            <p class="text-danger font-weight-bold">@p.Price?.ToString("N0") VNĐ</p>
+                            <button class="btn btn-outline-primary w-100">Thêm vào giỏ</button>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private List<GetProduct>? products;
+    protected override async Task OnInitializedAsync() =>
+        products = await Http.GetFromJsonAsync<List<GetProduct>>("api/product/all");
+}

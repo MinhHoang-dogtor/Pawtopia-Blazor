@@ -1,0 +1,16 @@
+﻿@page "/admin/products"
+@using Microsoft.AspNetCore.Authorization
+@using Pawtopia.Client.DTOs
+@attribute [Authorize(Roles = "Admin")] 
+@inject HttpClient Http
+
+<AuthorizeView Roles="Admin">
+    <Authorized>
+        <div class="container mt-4">
+            <h3 class="text-danger">🛠 Quản lý kho hàng (Admin Only)</h3>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="alert alert-warning">Bạn không có quyền truy cập trang này.</div>
+    </NotAuthorized>
+</AuthorizeView>

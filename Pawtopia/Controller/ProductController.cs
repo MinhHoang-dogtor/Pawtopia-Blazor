@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Pawtopia.Data;
 using Pawtopia.Models;
-using Pawtopia.DTOs; // <--- SỬA DÒNG NÀY: Dùng DTO của Backend, không dùng của Client
+using Pawtopia.DTOs;
+using Microsoft.AspNetCore.Authentication.Cookies; // Thêm cái này
 
 namespace Pawtopia.Controllers
 {
@@ -11,14 +13,10 @@ namespace Pawtopia.Controllers
     public class ProductController : ControllerBase
     {
         private readonly PawtopiaDbContext _context;
+        public ProductController(PawtopiaDbContext context) => _context = context;
 
-        public ProductController(PawtopiaDbContext context)
-        {
-            _context = context;
-        }
-
-        // Lấy tất cả sản phẩm
         [HttpGet("all")]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<GetProduct>>> GetAll()
         {
             var products = await _context.Products
@@ -33,19 +31,18 @@ namespace Pawtopia.Controllers
                     QuantityInStock = p.QuantityInStock,
                     IsActive = p.IsActive
                 }).ToListAsync();
-
             return Ok(products);
         }
 
-        // Thêm sản phẩm mới
         [HttpPost("add")]
+        // SỬA Ở ĐÂY: Chỉ định rõ dùng MyCookie để kiểm tra Role Admin
+        [Authorize(AuthenticationSchemes = "MyCookie", Roles = "Admin")]
         public async Task<IActionResult> Add([FromBody] CreateProduct dto)
         {
-            if (dto == null) return BadRequest("Dữ liệu không hợp lệ");
-
+            if (dto == null) return BadRequest();
             var product = new Product
             {
-                Id = Guid.NewGuid().ToString(), // Tạo ID tự động
+                Id = Guid.NewGuid().ToString(),
                 Name = dto.Name,
                 Price = dto.Price,
                 Description = dto.Description,
@@ -54,11 +51,9 @@ namespace Pawtopia.Controllers
                 QuantityInStock = dto.QuantityInStock,
                 IsActive = dto.IsActive
             };
-
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Thêm sản phẩm thành công!" });
+            return Ok(new { message = "Thêm thành công!" });
         }
     }
 }
