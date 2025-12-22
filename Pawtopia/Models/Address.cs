@@ -19,6 +19,17 @@ namespace Pawtopia.Models
         [Required(ErrorMessage = "Vui lòng chọn Tỉnh/Thành")]
         public string Province { get; set; } = null!;
 
+<<<<<<< HEAD
+        [Required]
+        public string District { get; set; } = null!; // Quận/Huyện
+        
+        [Required]
+        public string Ward { get; set; } = null!; // Phường/Xã
+
+
+        [Required]
+        public string DetailAddress { get; set; } = null!; // Số nhà, tên đường cụ thể
+=======
         [Required(ErrorMessage = "Vui lòng chọn Quận/Huyện")]
         public string District { get; set; } = null!;
 
@@ -27,6 +38,7 @@ namespace Pawtopia.Models
 
         [Required(ErrorMessage = "Vui lòng nhập địa chỉ cụ thể")]
         public string DetailAddress { get; set; } = null!;
+>>>>>>> 4b5d52ac0a3aca102f47077e2d92ce033ef34967
 
         public bool IsDefault { get; set; } = false;
 
