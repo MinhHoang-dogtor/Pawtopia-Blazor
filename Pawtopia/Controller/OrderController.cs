@@ -111,7 +111,7 @@ namespace Pawtopia.API.Controllers
         }
 
         // Hàm ghép chuỗi địa chỉ
-        private string GetFullAddress(Address? addr)
+        private string GetFullAddress(Pawtopia.Models.Address? addr)
         {
             if (addr == null) return "Không có địa chỉ";
             return $"{addr.DetailAddress}, {addr.Ward}, {addr.District}, {addr.Province}";
