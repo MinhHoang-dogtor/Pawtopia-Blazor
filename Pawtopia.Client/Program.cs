@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Microsoft.AspNetCore.Components.Authorization;
-using System.Net.Http;
+﻿using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Pawtopia.Client;
+using Pawtopia.Client.Services;
+using System.Net.Http;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
@@ -16,6 +17,7 @@ builder.Services.AddScoped(sp =>
     });
 
 // 🔹 AUTH (tạm giữ, chưa dùng cũng không sao)
+builder.Services.AddScoped<ProductService>();
 builder.Services.AddAuthorizationCore();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddAuthenticationStateDeserialization();
