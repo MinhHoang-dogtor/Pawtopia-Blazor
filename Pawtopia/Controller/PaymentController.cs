@@ -6,8 +6,8 @@ using Pawtopia.Models;
 
 namespace Pawtopia.API.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class PaymentController : ControllerBase
     {
         private readonly PawtopiaDbContext _context;
@@ -17,119 +17,93 @@ namespace Pawtopia.API.Controllers
             _context = context;
         }
 
-        // POST: api/payment/place-order
         [HttpPost("place-order")]
         public async Task<IActionResult> PlaceOrder([FromBody] PaymentRequestDto request)
         {
-            // 1. Validate dữ liệu cơ bản
-            if (request.Items == null || !request.Items.Any())
-            {
-                return BadRequest("Giỏ hàng trống, không thể thanh toán.");
-            }
+            if (request == null)
+                return BadRequest("Request null");
 
-            // Dùng Transaction để đảm bảo tính toàn vẹn (tạo đơn + trừ kho cùng lúc)
+            if (request.Items == null || request.Items.Count == 0)
+                return BadRequest("Giỏ hàng trống");
+
             using var transaction = await _context.Database.BeginTransactionAsync();
+
             try
             {
-                // 2. Tạo địa chỉ giao hàng (Address)
-                // Vì bảng Orders yêu cầu AddressId, ta phải tạo Address trước
-                var newAddress = new Address
+                // 1. Tạo Address
+                var address = new Address
                 {
                     Id = Guid.NewGuid().ToString(),
+                    UserId = request.UserId,
                     FullName = request.FullName,
                     PhoneNumber = request.PhoneNumber,
                     DetailAddress = request.AddressLine,
                     Ward = request.Ward,
                     Province = request.Province,
-                    UserId = request.UserId // Gắn địa chỉ này với User đó
+                    District = request.District,
                 };
-                _context.Addresses.Add(newAddress);
+
+                _context.Addresses.Add(address);
                 await _context.SaveChangesAsync();
 
-                // 3. Tạo Đơn hàng (Order)
-                var newOrder = new Order
+                // 2. Tạo Order (ĐÚNG MODEL BẠN ĐƯA)
+                var order = new Order
                 {
                     Id = Guid.NewGuid().ToString(),
                     UserId = request.UserId,
-                    AddressId = newAddress.Id,
+                    AddressId = address.Id,
                     CreatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                    Status = 1, // 1 = Mới tạo / Chờ xử lý
-                    IsPaid = 0, // 0 = Chưa thanh toán
-                    PaymentStatus = "COD", // Mặc định là COD, nếu online thì update sau
-                    // TotalAmount sẽ tính sau khi duyệt qua các sản phẩm
+                    Status = 1,
+                    IsPaid = 0,
+                    PaymentStatus = "COD"
                 };
 
-                // Lưu tạm Order để lấy ID (chưa commit transaction)
-                _context.Orders.Add(newOrder);
+                _context.Orders.Add(order);
                 await _context.SaveChangesAsync();
 
-                double totalAmountCalculated = 0;
-                var orderItemsList = new List<OrderItem>();
-
-                // 4. Duyệt qua từng sản phẩm để tạo OrderItem và Trừ kho
-                foreach (var itemDto in request.Items)
+                // 3. OrderItems + trừ kho
+                foreach (var item in request.Items)
                 {
-                    // Lấy thông tin sản phẩm thực tế từ DB để check tồn kho và giá
-                    var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == itemDto.ProductId);
+                    var product = await _context.Products
+                        .FirstOrDefaultAsync(p => p.Id == item.ProductId);
 
                     if (product == null)
-                    {
-                        throw new Exception($"Sản phẩm ID {itemDto.ProductId} không tồn tại.");
-                    }
+                        throw new Exception($"Product {item.ProductId} không tồn tại");
 
-                    if (product.QuantityInStock < itemDto.Quantity)
-                    {
-                        throw new Exception($"Sản phẩm '{product.Name}' không đủ hàng. Tồn kho: {product.QuantityInStock}");
-                    }
+                    if (product.QuantityInStock < item.Quantity)
+                        throw new Exception($"Không đủ hàng: {product.Name}");
 
-                    // Trừ tồn kho
-                    product.QuantityInStock -= itemDto.Quantity;
+                    product.QuantityInStock -= item.Quantity;
 
-                    // Tạo OrderItem
                     var orderItem = new OrderItem
                     {
                         Id = Guid.NewGuid().ToString(),
-                        OrderId = newOrder.Id,
+                        OrderId = order.Id,
                         ProductItemId = product.Id,
-                        Quantity = itemDto.Quantity,
-                        // Lưu ý: Có thể thêm trường Price vào bảng OrderItems nếu muốn lưu giá tại thời điểm mua
+                        Quantity = item.Quantity
                     };
-                    orderItemsList.Add(orderItem);
 
-                    // Cộng dồn tổng tiền 
-                    // Ở đây dùng giá từ DB * số lượng
-                    if (product.Price != null)
-                    {
-                        totalAmountCalculated += (double)product.Price * itemDto.Quantity;
-                    }
+                    _context.OrderItems.Add(orderItem);
                 }
 
-                // Lưu danh sách OrderItems
-                _context.OrderItems.AddRange(orderItemsList);
-
-                // Cập nhật lại sản phẩm (đã trừ kho)
-                _context.Products.UpdateRange(
-                    request.Items.Select(i => _context.Products.Local.FirstOrDefault(p => p.Id == i.ProductId))
-                );
-
                 await _context.SaveChangesAsync();
-
-                // 5. Commit Transaction
                 await transaction.CommitAsync();
 
                 return Ok(new
                 {
-                    Success = true,
-                    Message = "Đặt hàng thành công",
-                    OrderId = newOrder.Id,
-                    TotalAmount = totalAmountCalculated
+                    success = true,
+                    orderId = order.Id
                 });
             }
             catch (Exception ex)
             {
-                // Nếu có lỗi, rollback lại toàn bộ (không tạo đơn, không trừ kho)
                 await transaction.RollbackAsync();
-                return BadRequest(new { Success = false, Message = ex.Message });
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = ex.InnerException?.Message ?? ex.Message
+                });
             }
         }
     }
