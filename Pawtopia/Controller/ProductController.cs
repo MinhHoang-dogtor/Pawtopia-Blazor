@@ -34,6 +34,29 @@ namespace Pawtopia.Controllers
             return Ok(products);
         }
 
+        [HttpGet("by-category/{categoryId}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<IEnumerable<GetProduct>>> GetByCategoryId(string categoryId)
+        {
+            if (string.IsNullOrWhiteSpace(categoryId)) return BadRequest("Category id is required.");
+
+            var products = await _context.Products
+                .Where(p => p.CategoryId == categoryId)
+                .Select(p => new GetProduct
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Price = p.Price,
+                    Description = p.Description,
+                    ThumbImageLink = p.ThumbImageLink,
+                    CategoryId = p.CategoryId,
+                    QuantityInStock = p.QuantityInStock,
+                    IsActive = p.IsActive
+                }).ToListAsync();
+
+            return Ok(products);
+        }
+
         [HttpPost("add")]
         // SỬA Ở ĐÂY: Chỉ định rõ dùng MyCookie để kiểm tra Role Admin
         [Authorize(AuthenticationSchemes = "MyCookie", Roles = "Admin")]
