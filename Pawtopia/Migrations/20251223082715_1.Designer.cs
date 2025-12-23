@@ -10,8 +10,8 @@ using Pawtopia.Data;
 namespace Pawtopia.Migrations
 {
     [DbContext(typeof(PawtopiaDbContext))]
-    [Migration("20251222201432_DB")]
-    partial class DB
+    [Migration("20251223082715_1")]
+    partial class _1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -130,7 +130,6 @@ namespace Pawtopia.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("CreatedAt")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<long>("IsPaid")
@@ -223,6 +222,26 @@ namespace Pawtopia.Migrations
                     b.ToTable("Products", (string)null);
                 });
 
+            modelBuilder.Entity("Pawtopia.Models.ProductImage", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProductId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("ProductImage");
+                });
+
             modelBuilder.Entity("Pawtopia.Models.ShoppingCart", b =>
                 {
                     b.Property<string>("Id")
@@ -304,15 +323,13 @@ namespace Pawtopia.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Pawtopia.Models.User", "User")
+                    b.HasOne("Pawtopia.Models.User", null)
                         .WithMany("Orders")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Address");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Pawtopia.Models.OrderItem", b =>
@@ -345,6 +362,17 @@ namespace Pawtopia.Migrations
                     b.Navigation("Category");
                 });
 
+            modelBuilder.Entity("Pawtopia.Models.ProductImage", b =>
+                {
+                    b.HasOne("Pawtopia.Models.Product", "Product")
+                        .WithMany("ProductImages")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("Pawtopia.Models.ShoppingCartItem", b =>
                 {
                     b.HasOne("Pawtopia.Models.ShoppingCart", "ShoppingCart")
@@ -364,6 +392,11 @@ namespace Pawtopia.Migrations
             modelBuilder.Entity("Pawtopia.Models.Order", b =>
                 {
                     b.Navigation("OrderItems");
+                });
+
+            modelBuilder.Entity("Pawtopia.Models.Product", b =>
+                {
+                    b.Navigation("ProductImages");
                 });
 
             modelBuilder.Entity("Pawtopia.Models.User", b =>
