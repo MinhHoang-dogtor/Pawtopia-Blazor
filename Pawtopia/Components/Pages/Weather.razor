@@ -1,0 +1,133 @@
+﻿@page "/weather"
+@attribute [StreamRendering]
+
+@inject HttpClient Http
+@using Microsoft.AspNetCore.WebUtilities;
+
+<PageTitle>Weather - Pawtopia</PageTitle>
+
+<h1>Weather at HCMC</h1>
+
+@if (forecasts == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (forecasts.Length == 0)
+{
+    <p>No forecast data available.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th aria-label="Temperature in Celsius">Temp. (C)</th>
+                <th aria-label="Temperature in Fahrenheit">Temp. (F)</th>
+                <th>Summary</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var forecast in forecasts)
+            {
+                <tr>
+                    <td>@forecast.Date.ToShortDateString()</td>
+                    <td>@forecast.TemperatureC</td>
+                    <td>@forecast.TemperatureF</td>
+                    <td>@forecast.Summary</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+
+    private sealed class OpenMeteoResponse
+    {
+        public HourlyData? hourly { get; set; }
+    }
+
+    private sealed class HourlyData
+    {
+        public string[]? time { get; set; }
+        public double[]? temperature_2m { get; set; }
+    }
+
+    private class WeatherForecast
+    {
+        public DateOnly Date { get; set; }
+        public int TemperatureC { get; set; }
+        public string? Summary { get; set; }
+        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    }
+
+    private WeatherForecast[] forecasts = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        forecasts = null!;
+
+        var baseUrl = "https://api.open-meteo.com/v1/forecast";
+        var query = new Dictionary<string, string?>
+        {
+            ["latitude"] = "10.823",
+            ["longitude"] = "106.6296",
+            ["hourly"] = "temperature_2m",
+            ["timezone"] = "Asia/Bangkok",
+            ["forecast_days"] = "5"
+        };
+
+        var url = QueryHelpers.AddQueryString(baseUrl, query);
+        var response = await Http.GetAsync(url);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            forecasts = [];
+            return;
+        }
+
+        var json = await response.Content.ReadAsStringAsync();
+        var weatherResponse = System.Text.Json.JsonSerializer.Deserialize<OpenMeteoResponse>(json);
+
+        if (weatherResponse?.hourly?.time is null || weatherResponse.hourly.temperature_2m is null)
+        {
+            forecasts = [];
+            return;
+        }
+
+        // Group hourly temps by date and take daily averages to mimic the classic sample.
+        var byDate = new Dictionary<DateOnly, List<double>>();
+        var length = Math.Min(weatherResponse.hourly.time.Length, weatherResponse.hourly.temperature_2m.Length);
+
+        for (var i = 0; i < length; ++i)
+        {
+            if (DateTime.TryParse(weatherResponse.hourly.time[i], out var dateTime))
+            {
+                var date = DateOnly.FromDateTime(dateTime);
+
+                if (!byDate.TryGetValue(date, out var list))
+                {
+                    list = new List<double>();
+                    byDate[date] = list;
+                }
+
+                list.Add(weatherResponse.hourly.temperature_2m[i]);
+            }
+        }
+
+        forecasts = byDate
+            .OrderBy(dateGroup => dateGroup.Key)
+            .Take(5)
+            .Select(dateGroup =>
+                new WeatherForecast
+                {
+                    Date = dateGroup.Key,
+                    TemperatureC = (int)Math.Round(dateGroup.Value.Average()),
+                    Summary = "Forecast"
+                }
+            )
+            .ToArray();
+    }
+
+}

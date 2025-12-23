@@ -1,0 +1,20 @@
+﻿@inherits LayoutComponentBase
+
+<div role="application"
+     class="flex h-dvh flex-col">
+    <header class="flex h-[52px] bg-pink-100">
+        <Navigation />
+    </header>
+
+    <main class="grow">
+        @Body
+    </main>
+
+    <footer />
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>
